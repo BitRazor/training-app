@@ -1,0 +1,856 @@
+/* tracker.css: the Training app's look, version 2 (2026-11-04, design.md in the owner's office).
+   Dark only for now; every colour is a token below, so a light theme can be added later by
+   overriding the tokens. Calm where you lift (Workout), expressive where you look (Today, Progress,
+   the summary). Tonal surfaces, no shadows; one accent (volt lime), which is also the done colour. */
+
+/* ===================== 1. tokens ===================== */
+:root{
+  color-scheme:dark;
+  --bg:#0B0D10; --card:#14171C; --raised:#1B1F26; --high:#242A33; --line:#262B33;
+  --tx:#F3F5F7; --tx2:#9AA3AE; --tx3:#6B7480;
+  --acc:#C8F542; --onAcc:#0B0D10; --accTint:rgba(200,245,66,.12); --accLine:rgba(200,245,66,.38);
+  --warm:#FFB547; --warmTint:rgba(255,181,71,.12);
+  --ss:#A78BFA; --ssTint:rgba(167,139,250,.10);
+  --cardio:#60A5FA; --cardioTint:rgba(96,165,250,.12);
+  --homec:#C084FC; --homeTint:rgba(192,132,252,.12);
+  --bad:#F87171;
+  /* version 1 names kept as aliases (boot.js notices and a few inline styles read them) */
+  --card2:var(--raised); --mut:var(--tx2); --dim:var(--tx3); --warn:var(--warm); --blue:var(--cardio); --accD:var(--accTint);
+  --r-card:20px; --r-sheet:28px; --r-btn:16px; --r-in:14px;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --font:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --navH:76px;
+  --safeB:env(safe-area-inset-bottom,0px);
+}
+
+/* ===================== 2. base ===================== */
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0; background:var(--bg); color:var(--tx); font:400 16px/1.45 var(--font);
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased; text-size-adjust:100%;
+  padding:env(safe-area-inset-top,0px) 16px calc(var(--navH) + 24px + var(--safeB))}
+body.pillOn{padding-bottom:calc(var(--navH) + 120px + var(--safeB))}
+h1,h2,h3{margin:0}
+button,input,textarea,select{font-family:inherit; font-variant-numeric:tabular-nums}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+.ic{width:20px; height:20px; flex:none; display:block}
+.ic.sm{width:16px; height:16px} .ic.lg{width:24px; height:24px} .ic.xl{width:32px; height:32px}
+.muted{color:var(--tx2)} .dim{color:var(--tx3)} .accT{color:var(--acc)}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+.row{display:flex; gap:8px; align-items:center}
+.spread{display:flex; gap:8px; align-items:center; justify-content:space-between}
+
+/* ===================== 3. screens: large titles ===================== */
+.view{max-width:600px; margin:0 auto; animation:viewIn .22s ease-out}
+@keyframes viewIn{from{opacity:.35; transform:translateY(6px)}to{opacity:1; transform:none}}
+.overline{font-size:12px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--tx2); margin:22px 4px 0}
+.viewH{font-size:32px; font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:20px 4px 6px}
+.overline + .viewH{margin-top:4px}
+.viewSub{font-size:14px; color:var(--tx2); margin:0 4px 14px; line-height:1.45}
+.pageTop{display:flex; align-items:center; margin:8px 0 -10px -10px}
+.backBtn{width:48px; height:48px; border-radius:999px; border:0; background:none; color:var(--tx); display:flex; align-items:center; justify-content:center}
+.backBtn:active{background:var(--raised)}
+.backBtn .ic{width:26px; height:26px}
+.sectH{font-size:12px; letter-spacing:.07em; text-transform:uppercase; color:var(--tx2); font-weight:700; margin:26px 4px 10px}
+
+/* ===================== 4. components ===================== */
+/* cards: tonal, no border, no shadow */
+.card{background:var(--card); border-radius:var(--r-card); padding:16px; margin:12px 0}
+.card.raised{background:var(--raised)}
+.note{font-size:13.5px; color:var(--tx2); line-height:1.5}
+.warnBox{background:var(--warmTint); color:var(--warm); border-radius:14px; padding:12px 14px; font-size:14px; margin:8px 0}
+.bigNum{font-size:44px; font-weight:800; letter-spacing:-.02em; color:var(--acc); line-height:1.05}
+
+/* buttons: at least 48 px tall; primary = accent with dark text */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 20px; border-radius:var(--r-btn);
+  border:0; background:var(--raised); color:var(--tx); font:600 15px/1.2 var(--font); text-align:center; text-decoration:none}
+.btn:active{filter:brightness(1.15)}
+.btn.primary{background:var(--acc); color:var(--onAcc); font-weight:700}
+.btn.big{min-height:56px; font-size:17px; border-radius:18px}
+.btn.block{display:flex; width:100%}
+.btn.ghost{background:transparent; color:var(--tx2)}
+.btn.tonal{background:var(--accTint); color:var(--acc)}
+.btn.danger{color:var(--bad)}
+.btn.sm{font-size:14px; padding:0 14px}
+.btn .ic{width:20px; height:20px}
+.btnRow{display:flex; gap:10px; margin-top:12px}
+.btnRow .btn{flex:1}
+
+/* chips: fully round; the visible chip is 36 px, the touch area 48 px */
+.chip{position:relative; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 14px; border-radius:999px; border:0;
+  background:var(--raised); color:var(--tx); font:600 13.5px/1 var(--font); white-space:nowrap}
+.chip::after{content:""; position:absolute; left:0; right:0; top:-6px; bottom:-6px}
+.chip .ic{width:16px; height:16px}
+.chip.sel{background:var(--acc); color:var(--onAcc)}
+.chip:active{filter:brightness(1.2)}
+.chips{display:flex; flex-wrap:wrap; gap:8px 8px}
+.chips.scroll{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding:6px 2px; margin:0 -2px}
+.chips.scroll::-webkit-scrollbar{display:none}
+.pill{display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  padding:4px 9px; border-radius:999px; background:var(--raised); color:var(--tx2); white-space:nowrap}
+.pill.acc{background:var(--accTint); color:var(--acc)}
+.pill.warn{background:var(--warmTint); color:var(--warm)}
+.pill.blue{background:var(--cardioTint); color:var(--cardio)}
+.pill.home{background:var(--homeTint); color:var(--homec)}
+
+/* segmented control */
+.seg{display:flex; gap:4px; padding:4px; background:var(--card); border-radius:999px}
+.seg > button{flex:1; min-height:44px; border:0; border-radius:999px; background:transparent; color:var(--tx2); font:600 14px var(--font)}
+.seg > button.sel{background:var(--high); color:var(--tx)}
+
+/* progress bar */
+.bar{height:6px; border-radius:99px; background:var(--raised); overflow:hidden}
+.bar > i{display:block; height:100%; background:var(--acc); border-radius:99px; transition:width .35s ease}
+
+/* list rows (Settings and lists) */
+.list{background:var(--card); border-radius:var(--r-card); overflow:hidden; margin:10px 0}
+.li{display:flex; align-items:center; gap:14px; min-height:56px; padding:10px 16px; border-bottom:1px solid var(--line); color:var(--tx); background:none; width:100%; text-align:left; border-left:0; border-right:0; border-top:0; font:inherit}
+.li:last-child{border-bottom:0}
+button.li:active,.li[data-act]:active{background:var(--raised)}
+.liI{width:36px; height:36px; border-radius:12px; background:var(--raised); display:flex; align-items:center; justify-content:center; color:var(--tx2); flex:none}
+.liB{flex:1; min-width:0}
+.liT{display:block; font-size:15.5px; font-weight:600}
+.liS{display:block; font-size:13px; color:var(--tx2); margin-top:2px; line-height:1.4}
+.liV{font-size:15px; font-weight:700; color:var(--tx); white-space:nowrap}
+.li .chev{color:var(--tx3)}
+
+/* ===================== 5. bottom bar (4 destinations, Material 3 indicator pill) ===================== */
+.tabbar{position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; justify-content:space-around; gap:4px;
+  padding:8px 8px calc(10px + var(--safeB)); background:rgba(11,13,16,.94); border-top:1px solid var(--line);
+  -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px)}
+.tab{flex:1; max-width:120px; display:flex; flex-direction:column; align-items:center; gap:4px; min-height:56px; padding:0; border:0;
+  background:none; color:var(--tx2); font:600 12px/1.2 var(--font)}
+.tab .ti{display:flex; align-items:center; justify-content:center; width:64px; height:32px; border-radius:999px; transition:background .2s ease, color .2s ease}
+.tab .ti .ic{width:24px; height:24px}
+.tab.sel{color:var(--tx)}
+.tab.sel .ti{background:var(--acc); color:var(--onAcc)}
+.tab:active .ti{background:var(--raised)}
+.tab.sel:active .ti{background:var(--acc)}
+
+/* ===================== 6. sheets (#modal) and toasts ===================== */
+#modal{position:fixed; inset:0; z-index:60; display:none; align-items:flex-end; justify-content:center}
+#modal.open{display:flex}
+.mBack{position:fixed; inset:0; background:rgba(0,0,0,.6); animation:fadeIn .2s ease-out}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.mCard{position:relative; z-index:1; width:100%; max-width:600px; max-height:92vh; overflow-y:auto; overscroll-behavior:contain;
+  background:var(--raised); border-radius:var(--r-sheet) var(--r-sheet) 0 0; padding:10px 20px calc(20px + var(--safeB));
+  animation:sheetUp .28s ease-out}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.mCard::before{content:""; display:block; width:36px; height:4px; border-radius:99px; background:var(--tx3); opacity:.6; margin:0 auto 14px}
+.mTitle{font-size:22px; font-weight:700; letter-spacing:-.01em; margin:0 0 6px}
+.mMsg{font-size:14.5px; color:var(--tx2); margin:0 0 16px; line-height:1.45}
+.mInput{width:100%; background:var(--bg); border:1px solid var(--line); border-radius:var(--r-in); color:var(--tx); font-size:17px; padding:14px 14px; outline:none}
+.mInput:focus{border-color:var(--acc)}
+.mArea{min-height:110px; resize:vertical; font-family:inherit; line-height:1.45}
+.mChips{display:flex; flex-wrap:wrap; gap:10px}
+.mChip{min-height:48px; padding:0 18px; border-radius:999px; border:0; background:var(--high); color:var(--tx); font:600 15px var(--font)}
+.mChip:active{background:var(--acc); color:var(--onAcc)}
+.mChip.alt{background:transparent; color:var(--tx2); box-shadow:inset 0 0 0 1px var(--line)}
+.mCustom{display:flex; gap:10px; margin-top:12px}
+.mCustom .btn{flex:none}
+.mActions{display:flex; gap:10px; margin-top:20px}
+.mActions .btn{flex:1}
+.mCard .btn:not(.primary):not(.tonal):not(.ghost){background:var(--high)}
+.mClose{position:absolute; top:10px; right:12px; width:48px; height:48px; border:0; border-radius:999px; background:none; color:var(--tx2); display:flex; align-items:center; justify-content:center}
+.sheetSec{margin-top:22px}
+.sheetSec > .sectH{margin:0 0 10px}
+.kv{display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); font-size:15px}
+.kv:last-child{border-bottom:0}
+.kv > span:first-child{color:var(--tx2)}
+.kv b{font-weight:700; text-align:right}
+
+.toast{position:fixed; left:16px; right:16px; bottom:calc(var(--navH) + 18px + var(--safeB)); z-index:70; max-width:560px; margin:0 auto;
+  display:flex; align-items:center; gap:8px; padding:6px 6px 6px 16px; min-height:52px; border-radius:16px;
+  background:var(--high); color:var(--tx); border:1px solid #333a45; font-size:14.5px; font-weight:500;
+  opacity:0; transform:translateY(14px); transition:opacity .2s ease, transform .2s ease; pointer-events:none}
+.toast.show{opacity:1; transform:none; pointer-events:auto}
+.pillOn .toast{bottom:calc(var(--navH) + 114px + var(--safeB))}
+/* while a sheet is open the toast moves to the top, so it never covers the sheet's text or buttons */
+#modal.open ~ .toast{top:calc(env(safe-area-inset-top,0px) + 12px); bottom:auto; transform:translateY(-14px)}
+#modal.open ~ .toast.show{transform:none}
+.toastMsg{flex:1; min-width:0; padding:8px 0}
+.toastUndo{flex:none; display:flex; align-items:center; gap:6px; min-height:44px; padding:0 14px; border:0; border-radius:12px; background:none; color:var(--acc); font:700 14.5px var(--font)}
+.toastUndo .ic{width:18px; height:18px}
+
+/* ===================== 7. More ===================== */
+.moreGrid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px}
+.moreTile{display:flex; flex-direction:column; align-items:flex-start; gap:12px; min-height:124px; padding:16px; border:0; border-radius:var(--r-card);
+  background:var(--card); color:var(--tx); text-align:left; font:inherit}
+.moreTile:active{background:var(--raised)}
+.tileI{width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:var(--accTint); color:var(--acc)}
+.tileI .ic{width:24px; height:24px}
+.tileT{font-size:16.5px; font-weight:700; line-height:1.2}
+.tileS{font-size:13px; color:var(--tx2); line-height:1.35; margin-top:-8px}
+.moreTile.wide{grid-column:1 / -1; display:grid; grid-template-columns:44px 1fr; column-gap:14px; row-gap:2px; align-items:center; min-height:0}
+.moreTile.wide .tileI{grid-row:1 / span 2}
+.moreTile.wide .tileS{margin-top:0}
+.appVerBig{font-size:24px; font-weight:800; letter-spacing:-.01em}
+.appLine{font-size:14px; color:var(--tx2); margin-top:12px; line-height:1.45}
+.appStatus{display:flex; align-items:flex-start; gap:12px; margin:14px 0 4px; padding:12px 14px; border-radius:18px; background:var(--card); font-size:15.5px; font-weight:600; line-height:1.4}
+.asIc{flex:none; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--high); color:var(--tx2)}
+.appStatus .appLast{padding-top:7px}
+.appStatus.ok .asIc,.appStatus.ready .asIc{background:var(--accTint); color:var(--acc)}
+.appStatus.ready{box-shadow:inset 0 0 0 1px var(--accLine)}
+.appStatus.offline .asIc,.appStatus.broken .asIc,.appStatus.skipped .asIc{background:var(--warmTint); color:var(--warm)}
+.appStatus.app .asIc{background:var(--cardioTint); color:var(--cardio)}
+.appStatus.busy{color:var(--tx2)}
+.appRestart{margin-top:10px}
+
+/* ===================== 8. Workout (calm: dark, one accent, big numbers) ===================== */
+.previewBar{display:flex; gap:12px; align-items:flex-start; margin:14px 0 0; padding:14px 16px; border-radius:var(--r-card); background:var(--cardioTint); color:var(--tx); font-size:14.5px; line-height:1.45}
+.previewBar > .ic{color:var(--cardio); margin-top:2px}
+.previewBar .btnRow{margin-top:10px}
+/* the sticky session header */
+.sessHead{position:sticky; top:0; z-index:20; margin:4px -16px 0; padding:6px 16px 10px; background:rgba(11,13,16,.96); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px)}
+.shRow{display:flex; align-items:center; gap:10px; min-height:52px}
+.shDay{display:inline-flex; align-items:center; gap:6px; flex:0 1 auto; min-width:0; min-height:48px; padding:0 2px; border:0; background:none; color:var(--tx); font:800 22px/1.2 var(--font); letter-spacing:-.01em; white-space:nowrap; text-align:left}
+.shName{min-width:0; overflow:hidden; text-overflow:ellipsis}
+.shDay .shEdit{flex:none; width:16px; height:16px; color:var(--tx3)}
+.shDay:active .shName{opacity:.7}
+.shWeek{position:relative; display:inline-flex; align-items:center; gap:4px; min-height:40px; padding:0 12px 0 16px; border:0; border-radius:999px; background:var(--raised); color:var(--tx); font:700 15px var(--font)}
+.shWeek::after{content:""; position:absolute; left:0; right:0; top:-4px; bottom:-4px}
+.shTime{position:relative; flex:none; margin-left:auto; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px; border:0; border-radius:999px; background:var(--accTint); color:var(--acc); font:700 15px var(--font); font-variant-numeric:tabular-nums}
+.shTime::after{content:""; position:absolute; left:-4px; right:-4px; top:-6px; bottom:-6px}
+.shTime[hidden]{display:none}
+.shTime .icStop{display:none}
+.shTime.stopped{background:var(--raised); color:var(--tx2)}
+.shTime.stopped .icRun{display:none}
+.shTime.stopped .icStop{display:inline-block}
+.shBar{height:4px}
+/* the day switcher: one control, the home days grouped at its end in purple */
+.daySwitch{display:flex; gap:8px; margin:12px 0 8px}
+.daySwitch .progTabs{display:flex; gap:2px; padding:4px; border-radius:999px; background:var(--card)}
+.daySwitch .progTabs:first-child{flex:1.15}
+.daySwitch .progTabs.home{flex:1}
+.progTab{flex:1; display:flex; align-items:center; justify-content:center; gap:4px; min-height:44px; padding:0 6px; border:0; border-radius:999px; background:transparent; color:var(--tx2); font:600 14.5px var(--font); white-space:nowrap}
+.progTab .ic{width:17px; height:17px}
+.progTab.sel{background:var(--acc); color:var(--onAcc); font-weight:700}
+.progTabs.home .progTab{color:var(--homec)}
+.progTabs.home .progTab.sel{background:var(--homec); color:#1C0D2A}
+/* the phase line + its i chip */
+.phaseBanner{display:flex; align-items:center; gap:10px; margin:4px 0 10px; padding:10px 6px 10px 16px; border-radius:18px; background:var(--card)}
+.phaseTx{flex:1; min-width:0}
+.phaseName{font-size:14.5px; color:var(--tx)}
+.phaseName b{font-weight:700}
+.phaseName .doneCt{color:var(--acc); font-weight:700}
+.phaseCue{font-size:13px; color:var(--tx2); margin-top:2px}
+.iChip{flex:none; width:44px; height:44px; border:0; border-radius:999px; background:var(--raised); color:var(--tx2); display:flex; align-items:center; justify-content:center}
+.infoLines .phaseReps{font-size:15.5px; line-height:1.5; padding:12px 0; border-bottom:1px solid var(--line)}
+.infoLines .phaseReps:last-child{border-bottom:0}
+/* warm-up: an amber card, a row per move */
+.warmSec{margin:10px 0; border-radius:var(--r-card); background:var(--card); overflow:hidden; box-shadow:inset 4px 0 0 var(--warm)}
+.warmSec>summary{list-style:none; display:flex; align-items:center; gap:12px; min-height:64px; padding:8px 16px 8px 18px; cursor:pointer; user-select:none}
+.warmSec>summary::-webkit-details-marker{display:none}
+.wuIc{flex:none; width:40px; height:40px; border-radius:13px; background:var(--warmTint); color:var(--warm); display:flex; align-items:center; justify-content:center}
+.wuHead{flex:1; font-size:16px; font-weight:700}
+.wuChev{color:var(--tx3); transition:transform .2s ease}
+.warmSec[open] .wuChev{transform:rotate(180deg)}
+.warmSec .secBody{padding:0 12px 12px 16px}
+.wuCard{display:flex; align-items:center; gap:12px; padding:8px; margin:0 0 8px; border-radius:16px; background:var(--raised); transition:background .2s ease}
+.wuCard.nopic{padding-left:14px}
+.wuCard.done{background:var(--accTint)}
+.wuCard.done .wuName{color:var(--tx2)}
+.wuThumb{flex:none; width:56px; height:56px; padding:0; border:0; border-radius:12px; overflow:hidden; background:#fff}
+.wuTx{flex:1; min-width:0}
+.wuName{font-size:15px; font-weight:600; line-height:1.3}
+.wuDetail{font-size:13px; color:var(--tx2); line-height:1.35; margin-top:2px}
+.warmCollapse{display:flex; align-items:center; justify-content:center; gap:6px; width:100%; min-height:48px; margin-top:4px; border:0; border-radius:14px; background:transparent; color:var(--tx2); font:600 14px var(--font)}
+/* section labels */
+.liftsHead{font-size:12px; letter-spacing:.07em; text-transform:uppercase; color:var(--tx2); font-weight:700; margin:24px 4px 2px}
+.blockHead{font-size:12px; letter-spacing:.07em; text-transform:uppercase; color:var(--tx3); font-weight:700; margin:18px 4px 6px}
+.soloBlock,.finBlock{margin:4px 0}
+/* a superset: one violet rail, its head, the cards tagged 1A / 1B, a "then" link */
+.ssGroup{position:relative; margin:18px 0 8px; padding-left:14px}
+.ssGroup::before{content:""; position:absolute; left:0; top:4px; bottom:4px; width:4px; border-radius:4px; background:var(--ss)}
+.ssGroup .ssHead{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; margin:0 4px 8px; text-transform:none; letter-spacing:0}
+.ssTitle{color:var(--ss); font-size:12.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase}
+.ssHow{color:var(--tx); font-size:13.5px; font-weight:600}
+.ssPair{flex-basis:100%; color:var(--tx3); font-size:12.5px; font-weight:500; margin-top:1px}
+.ssPair b{color:var(--ss); font-weight:800}
+.ssPair .ssArrow{color:var(--tx3); margin:0 2px}
+.ssLink{display:flex; justify-content:center; align-items:center; height:22px}
+.ssLink span{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:var(--ss)}
+.ssGroup .planCard{margin:6px 0}
+.ssTag{display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; background:var(--ssTint); color:var(--ss); font-size:12px; font-weight:800; letter-spacing:.02em}
+/* the exercise card */
+.planCard{position:relative; margin:10px 0; padding:12px; border-radius:var(--r-card); background:var(--card); transition:background .2s ease}
+.planTop{display:flex; align-items:center; gap:12px}
+.exThumb{flex:none; width:64px; height:64px; padding:0; border:0; border-radius:14px; overflow:hidden; background:#fff; transition:width .26s ease, height .26s ease, margin .26s ease}
+.exThumb .exFig,.wuThumb .exFig{width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center}
+.exThumb img,.wuThumb img{display:block; width:100%; height:100%; object-fit:contain}
+.exThumb .exFig.pending,.wuThumb .exFig.pending{background:var(--bg); color:var(--tx3); border:2px dashed var(--line); border-radius:inherit}
+.exThumb .pendTx,.exThumb .pendFile,.wuThumb .pendTx,.wuThumb .pendFile{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+.pendSoon{font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-top:2px}
+.planPresc,.wuDetail,.howV,.noteTx{text-wrap:pretty}
+.nw{white-space:nowrap}
+.thumbNone{width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:var(--raised); color:var(--tx3)}
+.ptMain{flex:1; min-width:0; cursor:default}
+.ptMeta{display:flex; align-items:center; gap:6px; margin-bottom:4px}
+.exName{font-size:17px; font-weight:700; line-height:1.25; letter-spacing:-.005em}
+.doneLine{display:none}
+.ptL{flex:none; display:flex; gap:8px}
+.exTick{position:relative; flex:none; width:40px; height:40px; padding:0; border-radius:999px; border:2px solid var(--line); background:transparent; color:var(--tx3); display:flex; align-items:center; justify-content:center}
+.exTick::after{content:""; position:absolute; inset:-5px}
+.exTick .ic{width:20px; height:20px}
+.exTick.on{background:var(--acc); border-color:var(--acc); color:var(--onAcc)}
+.exTick.partial.on{background:var(--accTint); border-color:var(--acc); color:var(--acc)}
+.wuTick{width:48px; height:48px}
+.wuTick::after{inset:-2px}
+.pop{animation:pop .22s var(--spring)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+/* the body folds away when the lift is done (after the tick has popped) */
+.planBody{display:grid; grid-template-rows:1fr; transition:grid-template-rows .26s ease}
+.pbIn{min-height:0; overflow:hidden}
+.planCard.done .planBody{grid-template-rows:0fr; transition-delay:.2s}
+.planCard.done.peek .planBody{grid-template-rows:1fr; transition-delay:0s}
+.planCard.done{padding-top:10px; padding-bottom:10px}
+.planCard.done .exThumb{width:0; height:40px; margin-right:-12px}
+.planCard.done .ptMeta{display:none}
+.planCard.done .ptMain{cursor:pointer}
+.planCard.done .exName{font-size:15.5px; color:var(--tx2)}
+.planCard.done .doneLine:not(:empty){display:block; margin-top:1px; font-size:13.5px; font-weight:700; color:var(--acc)}
+/* the target, big: weight first */
+.planPresc{display:flex; flex-wrap:wrap; align-items:baseline; column-gap:8px; margin:14px 2px 2px; font-size:17px; font-weight:600; color:var(--tx2); line-height:1.25}
+.planPresc b{font-size:32px; font-weight:800; letter-spacing:-.02em; color:var(--tx)}
+.planPresc.tap{cursor:pointer}
+.planPresc .editi{align-self:center; color:var(--tx3)}
+.homeCard .planPresc{font-size:15.5px; font-weight:500; color:var(--tx); line-height:1.45}
+.planCard.untested .planPresc{font-size:15.5px; color:var(--warm)}
+.rateTag{align-self:center; display:inline-flex}
+.rateTag.up{color:var(--acc)} .rateTag.down{color:var(--tx3)}
+.lastTime{margin:6px 2px 0; font-size:13.5px; color:var(--tx2)}
+.lastTime b{color:var(--tx); font-weight:700}
+.ltPartial{color:var(--warm); font-weight:700}
+.ltEff{font-weight:700; color:var(--tx)}
+.ltEff.eff-easy, .ltEff.eff-smooth{color:var(--acc)}
+.ltEff.eff-hard{color:var(--warm)}
+.rampTip{display:flex; align-items:center; gap:8px; margin-top:10px; padding:9px 12px; border-radius:14px; background:var(--cardioTint); color:var(--cardio); font-size:13.5px; font-weight:600}
+.stickyNote{display:flex; align-items:flex-start; gap:8px; width:100%; margin-top:10px; padding:10px 12px; border:0; border-radius:14px; background:var(--warmTint); color:var(--tx); text-align:left; font:500 13.5px/1.4 var(--font)}
+.stickyNote .ic{color:var(--warm); margin-top:1px}
+.snTx{flex:1; min-width:0; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.snWhen{flex:none; color:var(--tx2); font-size:12.5px}
+/* set rows: one per set, the 56 dp tick on the right */
+.setRows{display:flex; flex-direction:column; gap:8px; margin:14px 0 2px}
+.setRow{display:flex; align-items:center; gap:12px; min-height:64px; padding:4px 4px 4px 16px; border-radius:18px; background:var(--raised); transition:background .2s ease}
+.setRow.on{background:var(--accTint)}
+.setNo{flex:none; min-width:22px; font-size:15px; font-weight:800; color:var(--tx3)}
+.setRow.plain .setNo{font-size:15.5px; font-weight:600; color:var(--tx)}
+.setRow.on .setNo{color:var(--acc)}
+.setTgt{flex:1; min-width:0; font-size:19px; font-weight:700; letter-spacing:-.01em}
+.setTick{width:56px; height:56px; flex:none; padding:0; border-radius:999px; border:2px solid #39404B; background:transparent; color:var(--tx3); display:flex; align-items:center; justify-content:center; transition:background .15s ease, border-color .15s ease, color .15s ease}
+.setTick .ic{width:26px; height:26px; stroke-width:2.5}
+.setTick.on{background:var(--acc); border-color:var(--acc); color:var(--onAcc)}
+/* Part 2 (2026-11-04), smart programs: a set's reps is a button (the ± stepper), the range line, a hold's how-to line,
+   Easy · Good · Hard on the folded card */
+.setReps{align-self:stretch; display:flex; align-items:center; min-height:56px; padding:0 10px; margin:0 -10px; border:0; border-radius:14px; background:none; color:var(--tx); text-align:left; font:700 19px var(--font); letter-spacing:-.01em}
+.setReps:active{background:var(--high)}
+.setReps:empty::before{content:"–"; color:var(--tx3)}
+.setRow.plain .setReps{font-size:16px; font-weight:600; color:var(--tx2)}
+.setRow.on .setReps{color:var(--tx)}
+.smartRange{margin:4px 2px 0; font-size:13px; color:var(--tx3)}
+.doseLine{margin:8px 2px 0; font-size:14px; line-height:1.45; color:var(--tx2); text-wrap:pretty}
+.harder{color:var(--acc); font-weight:700}
+.effortRow{display:none}
+/* rule version 3: four ratings, each with the reps that were left; the label sits above so the four fit a phone's width */
+.planCard.done .effortRow{display:flex; flex-direction:column; align-items:stretch; gap:6px; margin:8px 0 0}
+.effLbl{font-size:13px; font-weight:600; color:var(--tx2)}
+.effChips{padding:3px}
+.effChips > button.effChip{min-height:48px; padding:4px 2px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; line-height:1.15}
+.effN{font-size:14px; font-weight:650}
+.effH{font-size:11.5px; font-weight:500; color:var(--tx3)}
+.effChips > button.effChip.sel{background:var(--accTint); color:var(--acc)}
+.effChips > button.effChip.sel .effH{color:var(--acc); opacity:.8}
+/* 2026-11-17 (his gym note: "it could blink the button or buttons on hardness settings after finishing exercise, since
+   it's easy to forget to change if needed"): a lift just finished in the running session pulses its chips until one is
+   tapped; the steady ring under the pulse is what stays when the phone asks for less motion */
+.effortRow.nudge .effChips{box-shadow:0 0 0 2px var(--acc); animation:effNudge 1.1s ease-in-out infinite}
+@keyframes effNudge{0%,100%{box-shadow:0 0 0 2px rgba(200,245,66,.35)}50%{box-shadow:0 0 0 4px rgba(200,245,66,.95)}}
+.effortRow.nudge .effLbl{color:var(--acc)}
+.repSheet{padding:4px 0 2px}
+.repRow{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:6px 0 4px}
+.repBtn{width:72px; height:72px; flex:none; border:0; border-radius:999px; background:var(--high); color:var(--tx); display:flex; align-items:center; justify-content:center}
+.repBtn .ic{width:30px; height:30px; stroke-width:2.5}
+.repBtn:active{background:var(--line)}
+.repVal{flex:1; display:flex; flex-direction:column; align-items:center}
+.repNum{font-size:56px; font-weight:800; letter-spacing:-.03em; line-height:1.05}
+.repUnit{font-size:14px; font-weight:600; color:var(--tx2)}
+.repHint{margin:6px 0 16px; text-align:center; font-size:14px; color:var(--tx2)}
+/* suggestions (Part 2): the card's line with Use it / Keep, "Use all" at the top, Today's arrow, the summary's list,
+   the exercise sheet's target changes */
+.sugLine{margin:10px 0 0; padding:10px 12px 12px; border-radius:16px; background:var(--accTint); border:1px solid var(--accLine)}
+.sugLine.back{background:var(--warmTint); border-color:rgba(255,181,71,.38)}
+.sugTx{font-size:14.5px; line-height:1.4; color:var(--tx2)}
+.sugTx b{font-size:17px; font-weight:800; color:var(--tx)}
+.sugG{display:inline-block; min-width:14px; font-weight:800; color:var(--acc)}
+.sugLine.back .sugG{color:var(--warm)}
+.sugBtns{display:flex; gap:8px; margin-top:10px}
+.sugBtns .btn{flex:1; min-height:44px}
+.sugAll{margin:10px 0 0}
+.hpTgt.sug{color:var(--acc); font-weight:800}
+.sugList{list-style:none; margin:0; padding:0}
+.sugItem{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:10px 2px; border-bottom:1px solid var(--line); font-size:15px}
+.sugItem:last-child{border-bottom:0}
+.sugName{color:var(--tx2)}
+.sugTo{color:var(--tx); font-weight:800; white-space:nowrap}
+.tlList{display:flex; flex-direction:column}
+.tlRow{padding:10px 0; border-bottom:1px solid var(--line); font-size:14.5px; color:var(--tx)}
+.tlRow:last-child{border-bottom:0}
+/* the card's actions in one row: icon over a short label, equal widths */
+.exChips{display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:6px; margin-top:14px}
+.exChips .chip{flex-direction:column; justify-content:center; gap:4px; min-height:58px; padding:6px 2px; border-radius:16px; font-size:12px; font-weight:600; white-space:nowrap}
+.exChips .chip::after{display:none}
+.exChips .chip .ic{width:20px; height:20px; color:var(--tx2)}
+.finishRow{margin:26px 0 10px}
+.footNote{margin:6px 4px 0; font-size:13px; color:var(--tx3)}
+/* jump flash: an accent ring for a moment */
+.flash{animation:jumpFlash 1.1s ease}
+@keyframes jumpFlash{0%,100%{box-shadow:0 0 0 0 rgba(200,245,66,0)}25%{box-shadow:0 0 0 3px rgba(200,245,66,.85)}}
+
+/* ===================== 9. floating pills: Next, Now 1B, the rest timer ===================== */
+.nextBar,.restBar{position:fixed; left:12px; right:12px; bottom:calc(var(--navH) + 10px + var(--safeB)); z-index:45; max-width:576px; margin:0 auto}
+.nextBar[hidden],.restBar[hidden]{display:none}
+.nextBtn{display:flex; align-items:center; gap:12px; width:100%; min-height:56px; padding:8px 8px 8px 18px; border:1px solid #2E3540; border-radius:999px; background:var(--high); color:var(--tx); text-align:left; font:inherit}
+.nextBtn .nextLbl{flex:none; display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--acc)}
+.nextBtn .nextNm{flex:1; min-width:0; font-size:15.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.nextBtn .nextArrow{flex:none; width:40px; height:40px; border-radius:999px; background:var(--acc); color:var(--onAcc); display:flex; align-items:center; justify-content:center}
+.nextBtn.now .nextLbl{color:var(--ss)}
+.nextBtn.now .nextArrow{background:var(--ss); color:#140B2A}
+.restBar{border:1px solid #2E3540; border-radius:24px; background:var(--high); overflow:hidden}
+.restTrack{height:4px; background:var(--raised)}
+.restTrack > i{display:block; height:100%; background:var(--acc); transition:width .5s linear}
+.restRow{display:flex; align-items:center; gap:6px; padding:6px 8px 0 16px}
+.restMain{flex:1; min-width:0; display:grid; grid-template-columns:auto 1fr; align-items:baseline; column-gap:8px; padding:0; border:0; background:none; color:var(--tx); text-align:left; font:inherit}
+.restLbl{font-size:12px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--acc)}
+.restTime{font-size:28px; font-weight:800; line-height:1.1; letter-spacing:-.01em}
+.restNext{padding:1px 16px 9px; font-size:12.5px; color:var(--tx2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer}
+.rbtn{flex:none; display:inline-flex; align-items:center; justify-content:center; gap:4px; min-width:54px; min-height:48px; padding:0 10px; border:0; border-radius:14px; background:var(--raised); color:var(--tx); font:700 14px var(--font)}
+.rbtn.skip{background:var(--accTint); color:var(--acc)}
+.restBar.breath .restLbl{color:var(--ss)}
+.restBar.breath .restTrack > i{background:var(--ss)}
+.restBar.done{border-color:var(--acc); animation:restFlash .5s ease 3}
+.restBar.done .restLbl{font-size:16px; letter-spacing:.02em}
+/* 2026-11-12: the last 10 s count down big (tracker-session.js renderRest) */
+.restBar.final{border-color:var(--acc)}
+.restBar.final .restTime{font-size:44px; color:var(--acc)}
+.restBar.final.breath{border-color:var(--ss)}
+.restBar.final.breath .restTime{color:var(--ss)}
+@keyframes restFlash{50%{background:#3A4A12}}
+
+/* ===================== 10. sheets of the Workout ===================== */
+/* the number pad */
+.kp{margin-top:2px}
+.kpDisp{display:flex; align-items:center; gap:10px}
+.kpStep{flex:none; width:64px; height:72px; border:0; border-radius:20px; background:var(--high); color:var(--tx); display:flex; align-items:center; justify-content:center}
+.kpStep .ic{width:28px; height:28px}
+.kpStep:active,.kpKey:active{background:var(--line)}
+.kpVal{flex:1; min-width:0; display:flex; align-items:baseline; justify-content:center; gap:6px; min-height:72px; padding:0 10px; border-radius:20px; background:var(--bg); cursor:default}
+.kpIn{field-sizing:content; min-width:1.2ch; max-width:100%; padding:0; border:0; outline:none; background:transparent; color:var(--tx); caret-color:transparent; text-align:center; font:800 44px/72px var(--font); letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+.kpIn::placeholder{color:var(--tx3)}
+.kpUnit{font-size:18px; font-weight:700; color:var(--tx2)}
+.kpHint{margin:10px 0 0; font-size:13px; color:var(--tx2); text-align:center}
+.kpGrid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px}
+.kpKey{display:flex; align-items:center; justify-content:center; min-height:58px; border:0; border-radius:16px; background:var(--high); color:var(--tx); font:600 24px var(--font)}
+.kpKey .ic{width:26px; height:26px}
+/* the week sheet */
+.weekGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:6px}
+.wchip{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:66px; border:2px solid transparent; border-radius:18px; background:var(--high); color:var(--tx); font:700 21px var(--font)}
+.wchip.done{background:var(--accTint); color:var(--acc)}
+.wchip.cur{border-color:var(--acc)}
+.wchip.sel{background:var(--acc); color:var(--onAcc)}
+.wtick .ic{width:14px; height:14px}
+.wNow{font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--acc)}
+.wchip.sel .wNow{color:var(--onAcc)}
+.weekKey{display:flex; justify-content:center; gap:18px; margin-top:16px; font-size:13px; color:var(--tx2)}
+.weekKey span{display:inline-flex; align-items:center; gap:6px}
+.weekKey .ic{color:var(--acc)}
+.keyRing{display:inline-block; width:14px; height:14px; border-radius:5px; border:2px solid var(--acc)}
+/* the exercise sheet */
+.exBig .exFig.big{display:flex; justify-content:center; border-radius:20px; overflow:hidden; background:#fff}
+.exBig img{display:block; width:100%; max-height:40vh; object-fit:contain}
+.exFig.pending.big{flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:180px; background:var(--bg); border:2px dashed var(--line); color:var(--tx2)}
+.exFig.pending.big .pendTx{font-size:15px; font-weight:700; color:var(--tx)}
+.exFig.pending.big .pendFile{font-size:12.5px; font-family:ui-monospace,Menlo,Consolas,monospace; color:var(--tx2)}
+.exNow{margin-top:14px}
+.exNowTop{display:flex; align-items:center; gap:10px; font-size:13.5px}
+.exNowT{margin-top:6px; font-size:17px; font-weight:600; color:var(--tx2)}
+.exNowT b{font-size:30px; font-weight:800; color:var(--tx); letter-spacing:-.02em}
+.exNowT.small{font-size:15.5px; font-weight:500; color:var(--tx); line-height:1.45}
+.how .howRow{display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--line)}
+.how .howRow:last-child{border-bottom:0}
+.howK{flex:none; width:52px; padding-top:3px; font-size:11.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--acc)}
+.howV{font-size:15px; line-height:1.5}
+.spark{display:block; width:100%; height:auto}
+.progSum{display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin:8px 0 6px; font-size:14px; color:var(--tx2)}
+.progSum .ic{color:var(--warm)}
+.progArrow{color:var(--tx3)}
+.histList{margin-top:4px}
+.noteRow{padding:12px 0; border-bottom:1px solid var(--line)}
+.noteRow:last-child{border-bottom:0}
+.noteHd{display:flex; justify-content:space-between; gap:10px; font-size:14px}
+.noteRec{margin-top:2px; font-size:12.5px; font-weight:700; color:var(--acc)}
+.noteTx{margin-top:4px; font-size:15px; line-height:1.45}
+/* the end-of-week summary: the one celebratory moment */
+.sumCard .mTitle{text-align:center}
+.sumSheet{text-align:center}
+.sumBurst{width:92px; height:92px; margin:6px auto 18px; border-radius:999px; background:var(--accTint); color:var(--acc); display:flex; align-items:center; justify-content:center; animation:burst .6s var(--spring) both}
+.sumBurst .ic{width:46px; height:46px}
+@keyframes burst{0%{transform:scale(.3) rotate(-12deg); opacity:0}60%{transform:scale(1.12) rotate(4deg); opacity:1}100%{transform:none}}
+.sumStats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+.sumStat{padding:14px 6px 12px; border-radius:18px; background:var(--high)}
+.sumStat b{display:block; font-size:30px; font-weight:800; line-height:1.1}
+.sumStat .sumTime{font-size:22px; line-height:1.5}
+.sumStat span{display:block; margin-top:4px; font-size:11.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--tx2)}
+.sumSheet .sectH{text-align:left}
+.pbList{list-style:none; margin:0; padding:0; text-align:left}
+.pbItem{display:flex; align-items:center; gap:10px; margin-top:8px; padding:12px 14px; border-radius:16px; background:var(--accTint); color:var(--acc)}
+.pbName{flex:1; color:var(--tx); font-weight:600}
+.pbKg{font-weight:800}
+.pbHow{flex:none; font-size:12.5px; color:var(--tx2)}   /* 2026-11-12: the set behind an estimated best, "85 kg × 12" */
+.sumNext{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:20px; font-size:16px; font-weight:600}
+.sumNext .ic{color:var(--tx2)}
+
+/* the workout clock's sheet (2026-11-04): the time big, then Stop and Reset */
+.clockBig{margin:2px 0 4px; text-align:center; font-size:56px; font-weight:800; letter-spacing:-.02em; line-height:1.05; color:var(--acc); font-variant-numeric:tabular-nums}
+.clockBig.stopped{color:var(--tx2)}
+.clockSub{margin:0 0 18px; text-align:center; font-size:14.5px; color:var(--tx2); line-height:1.45}
+.clockList{margin:0; background:var(--card)}
+.clockRow[data-act="clockstop"] .liI{background:var(--accTint); color:var(--acc)}
+/* the rename sheet */
+.renameHint{margin:10px 2px 0; font-size:13.5px; color:var(--tx2); line-height:1.45}
+.renameReset{margin-top:10px}
+
+/* ===================== 11. Today (expressive) ===================== */
+.todayHero{position:relative; margin:12px 0; padding:20px; border-radius:24px; background:var(--card); overflow:hidden}
+.todayHero.gym{background:linear-gradient(150deg,#232B12 0%,#171B14 46%,var(--card) 100%)}
+.todayHero.gym.home{background:linear-gradient(150deg,#2A1A38 0%,#1A1620 46%,var(--card) 100%)}
+.todayHero.cardio{background:linear-gradient(150deg,#14263D 0%,#141A22 50%,var(--card) 100%)}
+.todayHero.hiit{background:linear-gradient(150deg,#3A2A10 0%,#1D1913 50%,var(--card) 100%)}
+.todayDay{font-size:12.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--tx2)}
+.todayTitle{margin:6px 0 2px; font-size:28px; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+.todayNote{font-size:14.5px; color:var(--tx2); line-height:1.4}
+.heroPreview{margin:16px 0 18px; padding:4px 0; border-top:1px solid rgba(255,255,255,.07)}
+.hpRow{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.06)}
+.hpName{flex:1; min-width:0; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.hpTgt{flex:none; font-size:15px; font-weight:700; color:var(--acc)}
+.hpMore{padding:9px 0 0; font-size:13.5px; color:var(--tx2)}
+.todayHero .btn.big{font-size:18px; min-height:60px}
+.zoneBox{display:flex; align-items:center; gap:14px; margin-top:16px; padding:14px; border-radius:18px; background:rgba(0,0,0,.25)}
+.zIc{flex:none; width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; background:var(--cardioTint); color:var(--cardio)}
+.hiit .zIc{background:var(--warmTint); color:var(--warm)}
+.zoneBox.rest .zIc{background:var(--raised); color:var(--tx2)}
+.zIc .ic{width:26px; height:26px}
+.zTx{display:flex; flex-direction:column}
+.zoneBig{font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.1}
+.zoneSub{font-size:14px; color:var(--tx2); margin-top:2px}
+.homeHero{background:linear-gradient(150deg,#2A1A38 0%,#1A1620 50%,var(--card) 100%)}
+.hhTop{display:flex; align-items:center; gap:14px; margin-bottom:16px}
+.hhIc{flex:none; width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; background:var(--homeTint); color:var(--homec)}
+.hhIc .ic{width:26px; height:26px}
+.hhTitle{display:block; font-size:21px; font-weight:800}
+.hhSub{display:block; font-size:13.5px; color:var(--tx2); margin-top:2px}
+.homeBtn{background:var(--homec); color:#1C0D2A; font-weight:700}
+/* the week strip */
+.weekStrip{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px}   /* equal days, whatever a name's length */
+.wrow{position:relative; display:flex; flex-direction:column; align-items:center; gap:7px; min-width:0; padding:10px 0 12px; border:0; border-radius:16px; background:var(--card); color:var(--tx2); font:inherit; min-height:84px}
+button.wrow{cursor:pointer}
+button.wrow:active{background:var(--raised)}
+.wrow .wd{font-size:12.5px; font-weight:700}
+.wrow .dot{width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--raised)}
+.wrow .dot .ic{width:19px; height:19px}
+.wrow .dot.strength{color:var(--acc); background:var(--accTint)}
+.wrow .dot.cardio{color:var(--cardio); background:var(--cardioTint)}
+.wrow .dot.hiit{color:var(--warm); background:var(--warmTint)}
+.wrow .dot.home{color:var(--homec); background:var(--homeTint)}
+.wrow .dot.rest{color:var(--tx3)}
+.wrow .dot2{position:absolute; top:46px; right:calc(50% - 26px); width:20px; height:20px; border-radius:7px; display:flex; align-items:center; justify-content:center; background:var(--homec); color:#1C0D2A; border:2px solid var(--card)}
+.wrow .dot2 .ic{width:12px; height:12px}
+.wrow.today{background:var(--raised); color:var(--tx); box-shadow:inset 0 0 0 2px var(--acc)}
+.wrow .wn{max-width:100%; padding:0 3px; font-size:11px; font-weight:600; line-height:1.2; color:var(--tx3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.wrow.today .wn{color:var(--tx2)}
+.sectRow{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:22px 4px 10px}
+.sectRow .sectH{margin:0}
+.editWeek{position:relative; display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 14px; border:0; border-radius:999px; background:var(--card); color:var(--tx); font:600 14px var(--font)}
+.editWeek::after{content:""; position:absolute; left:0; right:0; top:-4px; bottom:-4px}
+.editWeek .ic{color:var(--acc)}
+.editWeek:active{background:var(--raised)}
+/* program card + last session */
+.progCard{display:block; width:100%; text-align:left; border:0; color:var(--tx); font:inherit; cursor:pointer}
+.progCard > span{display:flex}
+.pcTop{align-items:center; gap:12px; margin-bottom:10px}
+.pcIc{flex:none; width:40px; height:40px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--accTint); color:var(--acc)}
+.pcHead{flex:1; display:flex; flex-direction:column}
+.pcName{font-size:17px; font-weight:700}
+.pcSub{font-size:13px; color:var(--tx2)}
+.pcTop .chev,.li .chev{color:var(--tx3)}
+.pcTrack{align-items:center; gap:10px; padding:6px 0}
+.pcT{flex:none; width:86px; font-size:13.5px; color:var(--tx2)}
+.pcTrack .bar{flex:1}
+.pcV{flex:none; width:40px; text-align:right; font-size:13.5px; font-weight:700}
+.lastSess .sectH{margin:0 0 6px}
+.lsDate{font-size:17px; font-weight:700; margin-bottom:6px}
+.lsRow{display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line); font-size:15px}
+.lsRow .ic{color:var(--acc)}
+.lsDot{flex:none; width:16px; height:16px; display:flex; align-items:center; justify-content:center}
+.lsDot::before{content:""; width:6px; height:6px; border-radius:99px; background:var(--tx3)}
+.lsName{flex:1; min-width:0}
+.lsKg{flex:none; font-weight:700}
+.lsRow.pb .lsKg{color:var(--acc)}
+
+/* ===================== 11b. the week schedule editor (2026-11-04) ===================== */
+.schedRow,.choice,.nameRow{gap:12px}
+.sdWd{flex:none; width:34px; font-size:14px; font-weight:800; color:var(--tx2)}
+.schedRow.today .sdWd{color:var(--acc)}
+.schedRow .dot,.choice .dot,.nameRow .dot{flex:none; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--raised); color:var(--tx3)}
+.schedRow .dot .ic,.choice .dot .ic,.nameRow .dot .ic{width:19px; height:19px}
+.schedRow .dot.strength,.choice .dot.strength,.nameRow .dot.strength{color:var(--acc); background:var(--accTint)}
+.schedRow .dot.cardio,.choice .dot.cardio{color:var(--cardio); background:var(--cardioTint)}
+.schedRow .dot.hiit,.choice .dot.hiit{color:var(--warm); background:var(--warmTint)}
+.schedRow .dot.home,.choice .dot.home,.nameRow .dot.home{color:var(--homec); background:var(--homeTint)}
+.sdWhat{font-weight:700}
+.sdAdd{display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px; background:var(--homeTint); color:var(--homec); font-size:12.5px; font-weight:700; vertical-align:1px; white-space:nowrap}
+.sdSub{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.schedOff{margin:10px 4px 0; color:var(--warm)}
+.schedReset{margin-top:14px}
+.nameRow .chev{width:18px; height:18px}
+.daySheet > .sectH:first-child{margin-top:0}
+.daySheet .sectH{margin:16px 0 8px}
+.choiceList{margin:0; background:var(--card)}
+.choice.sel{background:var(--accTint)}
+.choice.sel .liT{color:var(--acc)}
+.choice .chk{flex:none; display:flex; color:var(--acc)}
+.homeAdd{margin:2px 0 4px}
+.homeAdd .chip{min-height:40px; padding:0 16px; background:var(--high)}
+.homeAdd .chip.sel{background:var(--homec); color:#1C0D2A}
+
+/* ===================== 12. Progress ===================== */
+.liftChips{margin:4px -16px 4px; padding:6px 16px}
+.progChart{padding:16px 12px 10px}
+.pcLift{font-size:17px; font-weight:700; padding:0 4px}
+.pcKey{display:flex; gap:14px; padding:4px 4px 6px; font-size:12px; color:var(--tx2)}
+.pcKey span{display:inline-flex; align-items:center; gap:5px}
+.kDot{display:inline-block; width:9px; height:9px; border-radius:99px; background:var(--acc)}
+.kDot.partial{background:var(--warm)}
+.kDot.best{background:transparent; box-shadow:0 0 0 2px var(--tx); width:8px; height:8px}
+/* 2026-11-12: the estimated max: how it is worked out, the real max as a diamond, the button to log one */
+.pcHow{padding:2px 4px 2px; font-size:12.5px; line-height:1.35; color:var(--tx2)}
+.kDot.real{background:var(--tx); border-radius:1px; width:8px; height:8px; transform:rotate(45deg)}
+.progChart path.realMax{fill:var(--tx)}
+.progChart path.realMax.best{stroke:var(--acc); stroke-width:2.5}
+.maxBtn{margin:0 0 12px}
+.maxList{margin:0}
+.maxRow{align-items:center}
+.progChart svg{display:block; width:100%; height:auto; overflow:visible}
+.progChart .gLine{stroke:var(--line); stroke-width:1}
+.progChart .gLbl{fill:var(--tx3); font-size:10.5px; font-family:var(--font)}
+.progChart .gArea{fill:var(--accTint)}
+.progChart .gLine2{fill:none; stroke:var(--acc); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round}
+.progChart circle.pt{fill:var(--acc)}
+.progChart circle.pt.partial{fill:var(--warm)}
+.progChart circle.pt.best{stroke:var(--tx); stroke-width:2.5}
+.statGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0}
+.stat{padding:14px 16px; border-radius:18px; background:var(--card)}
+.stK{display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--tx2)}
+.stK .ic{color:var(--warm)}
+.stat b{display:block; margin-top:4px; font-size:22px; font-weight:800; letter-spacing:-.01em}
+.stat b.up{color:var(--acc)}
+.pbRow.thisWeek .liI{background:var(--accTint); color:var(--acc)}
+.pbRow .liV{font-size:16px}
+.consCard{padding:16px}
+.consTop{font-size:14.5px; color:var(--tx2); margin-bottom:10px}
+.consTop b{color:var(--tx); font-size:18px}
+.consWrap{display:flex; gap:6px}
+.consDays{display:grid; grid-template-rows:repeat(7,1fr); gap:4px; font-size:9.5px; color:var(--tx3); width:10px}
+.consDays span{display:flex; align-items:center; line-height:1}
+.consGrid{flex:1; display:grid; grid-template-rows:repeat(7,1fr); grid-auto-flow:column; grid-auto-columns:1fr; gap:4px}
+.cDay{aspect-ratio:1; border-radius:4px; background:var(--raised)}
+.cDay.on{background:var(--acc)}
+.cDay.today{box-shadow:inset 0 0 0 2px var(--tx)}
+.cDay.future{background:transparent; box-shadow:inset 0 0 0 1px var(--line)}
+.consFoot{display:flex; justify-content:space-between; margin:6px 0 12px 16px; font-size:11.5px; color:var(--tx3)}
+.trackRow{display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--line)}
+.trName{flex:none; width:92px; font-size:14px; color:var(--tx2)}
+.trackRow .bar{flex:1}
+.trVal{flex:none; width:44px; text-align:right; font-size:14px; font-weight:700}
+
+/* ===================== 13. Exercises library ===================== */
+.searchBox{display:flex; align-items:center; gap:10px; min-height:52px; margin:6px 0 4px; padding:0 16px; border-radius:999px; background:var(--card); color:var(--tx2)}
+.searchBox input{flex:1; min-width:0; height:48px; border:0; outline:none; background:transparent; color:var(--tx); font:500 16px var(--font)}
+.searchBox:focus-within{box-shadow:inset 0 0 0 2px var(--acc)}
+.libRow{min-height:72px; padding:10px 14px 10px 10px}
+.libThumb{flex:none; width:52px; height:52px; border-radius:12px; overflow:hidden; background:#fff; display:flex}
+.libThumb .exFig{width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center}
+.libThumb img{display:block; width:100%; height:100%; object-fit:contain}
+.libThumb .exFig.pending{background:var(--bg); color:var(--tx3); border:2px dashed var(--line); border-radius:12px}
+.libThumb .pendTx,.libThumb .pendFile{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+.libRow .liS{display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+.emptyCard{display:flex; flex-direction:column; align-items:center; gap:8px; padding:32px 20px; text-align:center; color:var(--tx3)}
+.emptyT{font-size:17px; font-weight:700; color:var(--tx)}
+
+/* ===================== 14. Programs, Notes, Fuel, Settings ===================== */
+.progItem{padding:18px}
+.progItem.active{box-shadow:inset 0 0 0 2px var(--accLine)}
+.piTop{display:flex; align-items:center; gap:14px}
+.ring{position:relative; flex:none; width:64px; height:64px}
+.ring svg{width:64px; height:64px; display:block}
+.ring .rTrack{fill:none; stroke:var(--raised); stroke-width:5}
+.ring .rVal{fill:none; stroke:var(--acc); stroke-width:5; stroke-linecap:round}
+.ringPct{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800}
+.piHead{flex:1; min-width:0}
+.progNm{font-size:20px; font-weight:800; letter-spacing:-.01em}
+.piBadges{display:flex; gap:6px; margin-top:6px}
+.progDesc{margin-top:14px; font-size:14.5px; color:var(--tx); line-height:1.45}
+.progMeta{margin-top:6px; font-size:13px; color:var(--tx2)}
+.paceRow{margin:16px 0 14px}
+.paceLbl{font-size:12px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--tx2); margin-bottom:8px}
+.paceChips.seg{background:var(--raised)}
+.paceChip{flex:1; min-height:44px; border:0; border-radius:999px; background:transparent; color:var(--tx2); font:600 13.5px var(--font)}
+.paceChips.seg > .paceChip.sel{background:var(--accTint); color:var(--acc); font-weight:700}
+.paceHint{margin-top:8px; font-size:13px; color:var(--tx2)}
+.noteFilter{margin:2px -16px 6px; padding:6px 16px}
+.noteList{padding:4px 16px}
+.noteDel{display:inline-flex; align-items:center; gap:6px; min-height:40px; margin-top:6px; padding:0 12px 0 10px; border:0; border-radius:999px; background:transparent; color:var(--bad); font:600 13.5px var(--font)}
+.noteDel:active{background:rgba(248,113,113,.1)}
+.dangerSheet [data-act="modalok"]{background:var(--bad); color:#2A0B0B}
+.fuelHero .sectH{margin:0 0 6px}
+.fuelHero .note{margin-top:8px}
+.ruleRow,.tipRow{align-items:flex-start}
+.ruleRow .liI,.tipRow .liI{margin-top:2px}
+.ruleRow .liS{font-size:14px; color:var(--tx); margin-top:4px; line-height:1.45}
+.tipRow .liB{font-size:14.5px; line-height:1.45; padding:2px 0}
+.tipRow .liI{color:var(--acc); background:var(--accTint)}
+.fuelLine{display:flex; gap:12px; align-items:flex-start; font-size:14.5px; font-weight:600; line-height:1.45}
+.fuelLine .ic{flex:none; color:var(--acc); margin-top:2px}
+.promptCard{display:flex; flex-direction:column; gap:14px; background:var(--accTint)}
+.pcMsg{display:flex; align-items:flex-start; gap:12px; font-size:15px; line-height:1.45}
+.pcMsg .ic{color:var(--acc); flex:none}
+.setGroup .sectH{margin-top:24px}
+.setNote{margin:8px 4px 0; font-size:13px}
+.fieldRow{cursor:text}
+.rowIn{flex:none; width:120px; min-height:44px; padding:0 12px; border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--tx); font:600 16px var(--font); text-align:right; outline:none}
+.rowIn[type="text"]{width:150px; text-align:left}
+.rowIn:focus{border-color:var(--acc)}
+.zoneRow .zK{flex:none; width:36px; height:28px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:var(--raised); font-size:12.5px; font-weight:800; color:var(--tx2)}
+.zoneRow:nth-child(2) .zK{background:var(--cardioTint); color:var(--cardio)}
+.zoneRow .liB{font-size:15px}
+.zoneRow .zV{flex:none; font-size:15px; font-weight:700}
+.catRow .liV{color:var(--acc)}
+.dangerRow .liT{color:var(--bad)}
+.dangerRow .liI{color:var(--bad); background:rgba(248,113,113,.1)}
+[hidden]{display:none !important}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+}
+
+/* ===================== Part 2 (2026-11-04): Programs actions and the program editor ===================== */
+.progNew{margin:4px 0 6px}
+.progBtns{display:flex; gap:8px; margin-top:10px}
+.progBtns .btn{flex:1; min-height:44px; padding:0 8px; font-size:13.5px; background:var(--raised)}
+.progBtns .btn .ic{width:18px; height:18px}
+.edNameRow{display:flex; align-items:center; gap:10px; width:100%; margin:4px 0 8px; padding:6px 4px; border:0; border-radius:14px; background:none; color:var(--tx); text-align:left}
+.edNameRow:active{background:var(--raised)}
+.edName{font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+.edNameIc{color:var(--tx3); width:22px; height:22px}
+.edBuiltin,.edNote{margin:2px 4px 10px}
+.edReset{margin-bottom:6px}
+.edDay,.edEx{padding:4px 6px 4px 8px; gap:4px}
+.edDay.sel{background:var(--accTint)}
+.edDay.sel .edDayName{color:var(--acc)}
+.edPick{flex:1; min-width:0; display:flex; align-items:center; gap:10px; min-height:56px; padding:6px 8px; border:0; border-radius:12px; background:none; color:var(--tx); text-align:left; font:inherit}
+.edPick:active{background:var(--raised)}
+.edUD{flex:none; display:flex; flex-direction:column; gap:2px}
+.edUD{order:-1}   /* the move handles on the left of a day and of an exercise alike */
+.udBtn{width:40px; height:30px; border:0; border-radius:10px; background:var(--raised); color:var(--tx2); display:flex; align-items:center; justify-content:center}
+.udBtn:disabled{opacity:.3}
+.udBtn .ic{width:18px; height:18px}
+.edDaySec{margin-top:22px}
+.edDayHead{display:flex; align-items:center; gap:10px; margin:0 4px 8px}
+.edDayTitle{flex:1; min-width:0; font-size:22px; font-weight:800; letter-spacing:-.01em}
+.edDayBtns{display:flex; gap:8px}
+.edDayBtns .btn{min-height:40px; background:var(--raised)}
+.edEx.paired{box-shadow:inset 3px 0 0 var(--ss)}
+.edExName{font-weight:600}
+.edPair{margin-left:6px; padding:1px 7px; font-size:11px; vertical-align:2px}
+.edEmpty{margin:8px 4px 12px}
+.edWeek{margin-top:16px}
+.pickList{margin-top:8px; max-height:58vh; overflow-y:auto}
+.pickRow{min-height:64px; padding:8px 12px 8px 8px}
+.pickRow .liS{display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+.pickEmpty{margin:12px 4px}
+.edRow{min-height:64px}
+.edStepper{flex:none; display:flex; align-items:center; gap:6px}
+.edSt{width:44px; height:44px; border:0; border-radius:999px; background:var(--high); color:var(--tx); display:flex; align-items:center; justify-content:center}
+.edSt:active{background:var(--line)}
+.edVal{min-width:48px; text-align:center; font-size:20px; font-weight:800}
+.edToggle{cursor:pointer}
+.edToggle:disabled{opacity:.45}
+.sw{flex:none; position:relative; width:52px; height:32px; border-radius:999px; background:var(--high); transition:background .15s ease}
+.sw i{position:absolute; top:4px; left:4px; width:24px; height:24px; border-radius:999px; background:var(--tx2); transition:transform .18s var(--spring), background .15s ease}
+.sw.on{background:var(--acc)}
+.sw.on i{transform:translateX(20px); background:var(--onAcc)}
+.edRm{margin-top:12px}
+
+/* ===================== Part 2 (2026-11-04): the catalogue: filters, rows, details ===================== */
+.catFilters{margin:8px 0 2px}
+.catCat .ic{width:14px; height:14px; transition:transform .15s ease}
+.catCat.open .ic{transform:rotate(180deg)}
+.catCat{white-space:nowrap; flex:none}
+.catCat.sel{background:var(--accTint); color:var(--acc)}
+.catClear{flex:none; white-space:nowrap}
+.catVals{margin:8px 0 2px; padding:10px; border-radius:16px; background:var(--card)}
+.catVal{background:var(--raised)}
+.mCard .catCat:not(.sel){background:var(--high)}
+.mCard .catVals{background:var(--card)}
+.libCount{margin:8px 4px 0; font-size:13px; color:var(--tx2)}
+.libSection{margin:20px 4px 0; font-size:17px; font-weight:800; letter-spacing:-.01em}
+.libSection + .libGroup .libHead{margin-top:12px}
+.catRow{min-height:72px; padding:10px 14px 10px 10px}
+.catRow .liS{display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+.catMore{margin-top:10px}
+.instrList{margin:0; padding:0 0 0 22px; font-size:15px; line-height:1.5}
+.instrList li{margin:0 0 8px; padding-left:2px}
+.factList{display:flex; flex-direction:column}
+.factRow{display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid var(--line); font-size:14.5px}
+.factRow:last-child{border-bottom:0}
+.factRow span{color:var(--tx2)}
+.factRow b{font-weight:600; text-align:right}
+
+/* ---------- body measurements (2026-11-11, tracker-body.js): the Progress card and the Log today sheet ---------- */
+.bodyCard{padding:14px 12px 12px}
+.bodyTiles{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.bodyTile{display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:10px 10px 9px; border:1.5px solid transparent; border-radius:14px; background:var(--raised); color:var(--tx); text-align:left; font:inherit; cursor:pointer}
+.bodyTile.sel{border-color:var(--acc); background:var(--accTint)}
+.bodyTile:disabled{opacity:.55; cursor:default}
+.btK{font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--tx2)}
+.btV{font-size:18px; font-weight:800; letter-spacing:-.01em; white-space:nowrap}
+.btD{font-size:11.5px; line-height:1.3; color:var(--tx3)}
+.bodyPlot{margin:12px 0 10px}
+.bodyPlot svg{display:block; width:100%; height:auto; overflow:visible}
+.bodyPlot .gLine{stroke:var(--line); stroke-width:1}
+.bodyPlot .gLbl{fill:var(--tx3); font-size:10.5px; font-family:var(--font)}
+.bodyPlot .gArea{fill:var(--accTint)}
+.bodyPlot .gLine2{fill:none; stroke:var(--acc); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round}
+.bodyPlot circle.pt{fill:var(--acc)}
+.bodyOne{margin:4px 2px 0}
+/* 2026-11-17: the change per week under each chart, the body fat's kilos and its note */
+.bodyRate{display:flex; flex-direction:column; gap:2px; margin:8px 2px 0; font-size:13px; font-weight:650; color:var(--tx)}
+.bodyRate .brLast{font-weight:500; color:var(--tx2)}
+.bodyFatKg{margin:8px 2px 0}
+.bodyFatNote{margin:4px 2px 0; font-size:12px; color:var(--tx3)}
+.bodyEmpty .note{margin:0 2px 12px}
+.bodyForm{display:flex; flex-direction:column; gap:10px; padding:2px 0 4px}
+.bodyF{display:flex; align-items:center; justify-content:space-between; gap:12px}
+.bfName{display:flex; flex-direction:column; font-size:15px; font-weight:650}
+.bfHint{font-size:12px; font-weight:500; color:var(--tx3)}
+.bfIn{display:flex; align-items:center; gap:6px; flex:none}
+.bodyIn{width:92px; text-align:right; font-size:18px; font-weight:700}
+.bfUnit{width:24px; font-size:13px; color:var(--tx2)}
+.bodyTip{margin:2px 2px 4px}
+.bodyRecentH{margin-top:10px}
+.bodyList{display:flex; flex-direction:column}
+.bodyRow{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px}
+.bodyRow:last-child{border-bottom:0}
+.brDate{flex:none; width:56px; font-weight:650}
+.brVals{flex:1; min-width:0; color:var(--tx2)}
+.bodyDel{flex:none}
