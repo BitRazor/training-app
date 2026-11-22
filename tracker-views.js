@@ -12,14 +12,24 @@ var MONTHS_LONG = ["January","February","March","April","May","June","July","Aug
 var DAY_ICON = { strength: "dumbbell", cardio: "heart", hiit: "bolt", rest: "moon", home: "house" };
 /* a lift's target for the hero preview: "10 kg × 10/side", a home dose's set count, or the 15RM prompt */
 function previewTarget(en, w, prog){ var t = setTargetText(en, w, prog); if(t) return t; if(en.dose) return en.sets + (en.sets === 1 ? " set" : " sets"); return (typeof smartActive === "function" && smartActive()) ? "set a starting weight" : "enter your 15RM"; }
+/* a program's card on Today: weeks done per day-track (doneFn(day) gives that program's finished weeks); opens Programs */
+function progCardHtml(P, tracks, sub, doneFn){
+  return '<button class="card progCard" data-view="library"><span class="pcTop"><span class="pcIc">' + icon("layers") + '</span><span class="pcHead"><span class="pcName">' + esc(P.name) + '</span>' +
+    '<span class="pcSub">' + esc(sub) + '</span></span>' + icon("chevR", "chev") + '</span>' +
+    tracks.map(function(d){ var n = doneFn(d).length; return '<span class="pcTrack"><span class="pcT">' + esc(dayTitle(d)) + '</span><span class="bar"><i style="width:' + weeksDonePct(n, P) + '%"></i></span><span class="pcV">' + weeksDoneText(n, P) + '</span></span>'; }).join("") + '</button>';
+}
 function renderToday(){
   var plan = weekPlan(), i = weekdayIdx(), today = plan[i], now = new Date();
+  /* Part 5 (2026-11-22): several programs on: today's workout's own program is the one on screen */
+  var multi = typeof multiOn === "function" && multiOn();
+  if(multi) followDay((today.type === "strength" || today.type === "home") ? today.ref : (today.home || null));
   var h = mainHead("Today", WEEKDAY_LONG[i] + " · " + now.getDate() + " " + MONTHS_LONG[now.getMonth()]);
   if(today.type === "strength" || today.type === "home"){
-    /* his own name for the workout is the title (and then not repeated in the line above) */
+    /* his own name for the workout is the title (and then not repeated in the line above); with several programs on, the
+       line names the program (Part 5) */
     var ref = today.ref, cw = currentWeek(ref), E = (db.programs[ref] || { entries: [] }).entries, cn = customName(ref);
     h += '<div class="todayHero gym' + (today.type === "home" ? " home" : "") + '">' +
-      '<div class="todayDay">' + today.day + ' · ' + (today.type === "home" ? "Home · " : (cn ? "" : esc(shortName(ref)) + " · ")) + weekOfText(cw) + '</div>' +
+      '<div class="todayDay">' + today.day + ' · ' + (multi && today.type !== "home" ? esc(activeProg().name) + " · " : "") + (today.type === "home" ? "Home · " : (cn ? "" : esc(shortName(ref)) + " · ")) + weekOfText(cw) + '</div>' +
       '<div class="todayTitle">' + esc(cn || today.label) + '</div><div class="todayNote">' + esc(today.note) + '</div>' +
       '<div class="heroPreview">' + E.slice(0, 4).map(function(en){
         /* Part 2: a waiting suggestion shows here too, with its arrow (tracker-smart.js) */
@@ -51,11 +61,21 @@ function renderToday(){
       '<span class="wd">' + d.day + '</span><span class="dot ' + d.type + '">' + icon(DAY_ICON[d.type] || "calendar") + '</span>' +
       (d.home ? '<span class="dot2">' + icon("house") + '</span>' : '') + '<span class="wn" aria-hidden="true">' + esc(stripWord(d)) + '</span><span class="sr">' + esc(sr) + '</span></' + tag + '>';
   }).join("") + '</div>';
-  /* the program card: weeks done of 12 per day-track; opens Programs */
-  var AP = getProgram(db.activeProgram), tracks = AP.days.concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []);
-  h += '<button class="card progCard" data-view="library"><span class="pcTop"><span class="pcIc">' + icon("layers") + '</span><span class="pcHead"><span class="pcName">' + esc(AP.name) + '</span>' +
-    '<span class="pcSub">Active program · ' + AP.weeks + ' weeks</span></span>' + icon("chevR", "chev") + '</span>' +
-    tracks.map(function(d){ var n = progWeeksDone(d).length; return '<span class="pcTrack"><span class="pcT">' + esc(dayTitle(d)) + '</span><span class="bar"><i style="width:' + weeksDonePct(n, AP) + '%"></i></span><span class="pcV">' + weeksDoneText(n, AP) + '</span></span>'; }).join("") + '</button>';
+  /* the program card: weeks done of 12 per day-track; opens Programs. Part 5: with several programs on, a card for each one
+     with a day on the week (the home days on the first one's), and a line naming any program on but not on the week */
+  if(!multi){
+    var AP = getProgram(db.activeProgram), tracks = AP.days.concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []);
+    h += progCardHtml(AP, tracks, "Active program · " + AP.weeks + " weeks", progWeeksDone);
+  } else {
+    var lead = leadProgram(), off = [];
+    programsOn().forEach(function(pid){
+      var P = getProgram(pid), tr = P.days.filter(function(d){ return !!slotOf(d, plan); });
+      if(!tr.length){ off.push(P.name); return; }
+      tr = P.days.concat(pid === lead && typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []);   /* all its days (a day not on the week too), the home days on the first */
+      h += progCardHtml(P, tr, "On · " + P.weeks + " weeks", function(d){ return weeksDoneOf(pid, d); });
+    });
+    if(off.length) h += '<div class="note multiOff">Also on, not on your week yet: ' + esc(joinAnd(off)) + '</div>';
+  }
   /* the last session, from the diary */
   var ls = lastSession();
   if(ls) h += '<div class="card lastSess"><div class="sectH">Last session</div><div class="lsDate">' + esc(ls.label) + '</div>' + ls.rows.map(function(r){
@@ -279,13 +299,22 @@ function ringHtml(pct){
 /* Part 2 (2026-11-04): the built-ins, then his own programs (tracker-editor.js), each with Edit and Duplicate, his own with
    Delete; "New program" at the top */
 function renderLibrary(){
-  var h = subHead("Programs", "Your training programs. The active one drives Today and the Workout. Tap one to preview it or start training — your strength carries forward.");
+  /* Part 5 (2026-11-22): an On switch on each card; with several on, an ON pill and its own Open the Workout on each */
+  var multi = multiOn(), plan = weekPlan();
+  var h = subHead("Programs", multi ? "Your training programs. The ones that are on share your week, and each day runs its own program. Switch to makes one program the only one — your strength carries forward."
+                                    : "Your training programs. The active one drives Today and the Workout. Tap one to preview it or start training — your strength carries forward.");
   h += '<button class="btn primary block progNew" data-act="prognew">' + icon("plus") + 'New program</button>';
   var own = Object.keys(db.userPrograms || {}).filter(function(id){ return db.userPrograms[id].own && db.programLib[id]; });
   h += PROGRAM_ORDER.concat(own).map(function(pid){
     var P = db.programLib[pid]; if(!P) return "";
     var ps = db.programState[pid] || { progress: {} };
-    var active = pid === db.activeProgram;
+    var active = pid === db.activeProgram, on = isOn(pid), blk = on ? null : onBlocker(pid);
+    var placed = on && multi && P.days.some(function(d){ return !!slotOf(d, plan); });
+    var onSub = on ? (!multi ? "On: it drives Today and the Workout" : placed ? "On: its days are on your week" : "On, not on your week yet: Edit week puts its days there")
+                   : blk ? "Shares its days with " + getProgram(blk).name + ": use Switch to" : "Off: turn it on to train it alongside";
+    var onRow = '<div class="onRow"><span class="onTx"><b>' + (on ? "On" : "Off") + '</b><span class="onSub">' + esc(onSub) + '</span></span>' +
+      '<button class="onSw" role="switch" data-act="progon" data-prog="' + esc(pid) + '" aria-checked="' + on + '" aria-label="' + esc(P.name) + ' on"' + ((on ? !multi : !!blk) ? " disabled" : "") + '><i></i></button></div>';
+    var switchBtn = '<button class="btn block" data-act="switchprogram" data-prog="' + esc(pid) + '">' + icon("swap") + 'Switch to ' + esc(P.name) + '</button>';
     var totalWk = P.days.length * P.weeks;
     var doneWk = P.days.reduce(function(s, d){ return s + ((((ps.progress || {})[d] || {}).weeksDone || []).length); }, 0);
     var pctDone = totalWk ? Math.round(doneWk / totalWk * 100) : 0;
@@ -296,17 +325,18 @@ function renderLibrary(){
     var paceHtml = P.smart ? '' : '<div class="paceRow"><div class="paceLbl">Climb rate</div><div class="paceChips seg">' +
         PROGRESSION_MODE_ORDER.map(function(m){ var M = PROGRESSION_MODES[m]; return '<button class="paceChip' + (m === curMode ? " sel" : "") + '" data-act="setpace" data-prog="' + esc(pid) + '" data-mode="' + m + '" title="' + esc(M.hint) + '">' + esc(M.label) + '</button>'; }).join("") +
         '</div><div class="paceHint">' + esc((PROGRESSION_MODES[curMode] || PROGRESSION_MODES.plateau).hint) + '</div></div>';
-    return '<div class="card progItem' + (active ? " active" : "") + '"><div class="piTop">' + ringHtml(pctDone) + '<div class="piHead"><div class="progNm">' + esc(P.name) + '</div>' +
-      '<div class="piBadges">' + (active ? '<span class="pill acc progActive">ACTIVE</span>' : '') + (ps.completedAt ? '<span class="pill progDoneB">' + icon("check", "sm") + 'done</span>' : '') + '</div></div></div>' +
+    return '<div class="card progItem' + (active && !multi ? " active" : "") + (multi && on ? " on" : "") + '"><div class="piTop">' + ringHtml(pctDone) + '<div class="piHead"><div class="progNm">' + esc(P.name) + '</div>' +
+      '<div class="piBadges">' + (active && !multi ? '<span class="pill acc progActive">ACTIVE</span>' : '') + (multi && on ? '<span class="pill acc progOnPill">ON</span>' : '') + (ps.completedAt ? '<span class="pill progDoneB">' + icon("check", "sm") + 'done</span>' : '') + '</div></div></div>' +
       '<div class="progDesc">' + esc(P.own ? P.days.length + (P.days.length === 1 ? " day: " : " days: ") + P.days.map(function(d){ return dayName(d); }).join(", ") : P.desc + (P.edited ? " Edited by you." : "")) + '</div>' +
       '<div class="progMeta">' + P.weeks + ' weeks · ' + esc(dirBadge) + ' · ' + doneWk + '/' + totalWk + ' day-weeks done</div>' +
-      paceHtml +
-      (active ? '<button class="btn tonal block" data-view="programs">' + icon("dumbbell") + 'Open the Workout</button>'
-              : '<button class="btn block" data-act="switchprogram" data-prog="' + esc(pid) + '">' + icon("swap") + 'Switch to ' + esc(P.name) + '</button>') +
+      onRow + paceHtml +
+      (multi ? (on ? '<button class="btn tonal block" data-act="openprog" data-prog="' + esc(pid) + '">' + icon("dumbbell") + 'Open the Workout</button>' : switchBtn)
+             : (active ? '<button class="btn tonal block" data-view="programs">' + icon("dumbbell") + 'Open the Workout</button>' : switchBtn)) +
       '<div class="progBtns"><button class="btn sm" data-act="progedit" data-prog="' + esc(pid) + '">' + icon("edit") + 'Edit</button>' +
       '<button class="btn sm" data-act="progdup" data-prog="' + esc(pid) + '">' + icon("layers") + 'Duplicate</button>' +
       (P.own ? '<button class="btn sm danger" data-act="progdel" data-prog="' + esc(pid) + '">' + icon("trash") + 'Delete</button>' : '') + '</div></div>';
   }).join("");
+  if(typeof starterSectionHtml === "function") h += starterSectionHtml();   /* Part 6: the starter programs (tracker-starters.js) */
   h += '<div class="note footNote">Build your own with New, or Duplicate one to change it. Built-in programs are never deleted: editing one makes your copy, and Reset to original brings it back. Your strength carries forward — starting a new program picks up from your last completed week (+ one step).</div>';
   $("#view-library").innerHTML = h;
 }

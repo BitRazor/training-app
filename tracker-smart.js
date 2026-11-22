@@ -389,7 +389,8 @@ function onSmartWeight(prog, week, exId, then){
   var ex = exById(exId) || { name: exId }, k = smartKind(en, ex), t = sessTarget(prog, week, en);
   if(k === "hold" || k === "effort") return;
   if(!t){
-    openModal({ title: "Starting weight · " + ex.name, message: "The weight you will lift today (kg). It starts at " + smartRange(en, ex).lo + " reps, and the app suggests the next step after each session.", mode: "number", placeholder: "kg", stepEx: ex,
+    /* Part 7 (plan.md "The design" 7): how to pick it, the top of the range with about 2 more in you */
+    openModal({ title: "Starting weight · " + ex.name, message: "A weight you could lift about " + smartRange(en, ex).hi + " times with 2 more in you. You start at " + smartRange(en, ex).lo + " reps; after each session the app suggests the next step.", mode: "number", placeholder: "kg", stepEx: ex,
       onSubmit: function(v){ var n = num(v); if(n == null || n <= 0){ toast("Enter a weight above 0"); return; }
         var undo = undoPoint();
         if(!db.targets || typeof db.targets !== "object") db.targets = {};

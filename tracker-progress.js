@@ -7,7 +7,8 @@
 /* a workout's name (his own, else the default; tracker-week.js dayName) */
 function dayTitle(d){ return dayName(d); }
 function libraryGroups(){
-  var days = getProgram(db.activeProgram).days.concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []), groups = [], seen = {}, wu = [];
+  var gym = (typeof multiOn === "function" && multiOn()) ? onGymDays() : getProgram(db.activeProgram).days;   /* Part 5: every program on */
+  var days = gym.concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []), groups = [], seen = {}, wu = [];
   days.forEach(function(d){
     var D = db.programs[d]; if(!D) return;
     groups.push({ id: d, title: dayTitle(d), items: D.entries.map(function(en){ return { id: en.exerciseId, kind: "lift", day: d, name: (exById(en.exerciseId) || { name: en.exerciseId }).name }; }) });
@@ -73,7 +74,7 @@ function openPicSheet(gif){
 
 function renderExercises(){
   var groups = libraryGroups(), n = groups.reduce(function(s, g){ return s + g.items.length; }, 0);
-  var h = subHead("Exercises", n + " moves of " + esc(getProgram(db.activeProgram).name) + " and the home days first, then every exercise in the catalogue, with how-tos.") +
+  var h = subHead("Exercises", n + " moves of " + ((typeof multiOn === "function" && multiOn()) ? "your programs" : esc(getProgram(db.activeProgram).name)) + " and the home days first, then every exercise in the catalogue, with how-tos.") +
     '<label class="searchBox">' + icon("search") + '<input id="exSearch" type="search" placeholder="Search exercises" autocomplete="off" aria-label="Search exercises"></label>' +
     /* Part 2: the filter chips and the whole catalogue under his program's exercises (tracker-catalog.js) */
     '<div id="libFilters" class="catFilters"></div><div class="libCount"></div><div class="libSection">In my program</div>';
@@ -242,8 +243,11 @@ function consistencyHtml(today){
   for(var k = 0; k < 84; k++){ var d = new Date(start); d.setDate(start.getDate() + k); var iso = isoOf(d), on = !!days[iso]; if(on) n++;
     cells += '<span class="cDay' + (on ? " on" : "") + (iso === today ? " today" : "") + (iso > today ? " future" : "") + '" data-date="' + iso + '" title="' + esc(shortDate(iso)) + '"></span>'; }
   var AP = getProgram(db.activeProgram), tracks = AP.days.concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []);
+  /* Part 5: with several programs on, every program's days, each counted in its own program (the home days in the first) */
+  var multi = typeof multiOn === "function" && multiOn(), ownerP = function(d){ return multi ? (ownerOf(d) || db.activeProgram) : db.activeProgram; };
+  if(multi) tracks = onGymDays().concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []);
   return '<div class="sectH">Consistency</div><div class="card consCard"><div class="consTop"><b>' + n + '</b> training ' + (n === 1 ? "day" : "days") + ' in 12 weeks</div>' +
     '<div class="consWrap"><div class="consDays"><span>M</span><span></span><span>W</span><span></span><span>F</span><span></span><span>S</span></div><div class="consGrid">' + cells + '</div></div>' +
     '<div class="consFoot"><span>12 weeks ago</span><span>this week</span></div>' +
-    '<div class="trackList">' + tracks.map(function(d){ var w = progWeeksDone(d).length; return '<div class="trackRow"><span class="trName">' + esc(dayTitle(d)) + '</span><span class="bar"><i style="width:' + weeksDonePct(w, AP) + '%"></i></span><span class="trVal">' + weeksDoneText(w, AP) + '</span></div>'; }).join("") + '</div></div>';
+    '<div class="trackList">' + tracks.map(function(d){ var op = ownerP(d), OP = getProgram(op), w = weeksDoneOf(op, d).length; return '<div class="trackRow"><span class="trName">' + esc(dayTitle(d)) + '</span><span class="bar"><i style="width:' + weeksDonePct(w, OP) + '%"></i></span><span class="trVal">' + weeksDoneText(w, OP) + '</span></div>'; }).join("") + '</div></div>';
 }

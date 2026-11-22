@@ -173,6 +173,11 @@ function normalize(){
   if(!db.profile.hrZones||!db.profile.hrZones.z1) regenZones();
   /* Part 2 (2026-11-04), additive: his own programs and days (tracker-editor.js), registered before migrate checks the
      active program; his days go into the day tracks after migrate rebuilds them from the seed */
+  /* Part 7 (2026-11-22), additive: the first start still open, and a phone that began with it (no home workouts of the
+     original program: HOME_DAYS, read everywhere, is emptied) */
+  if(db.welcomeOpen!==true) delete db.welcomeOpen;
+  if(db.startedFresh!==true) delete db.startedFresh;
+  else if(typeof HOME_DAYS!=="undefined") HOME_DAYS.length=0;
   if(typeof cleanUserPrograms==="function"){ cleanUserPrograms(); syncPrograms(); }
   migrate();
   if(typeof applyDays==="function") applyDays();
@@ -180,6 +185,7 @@ function normalize(){
      migrate, which refreshes the day tracks they are checked against. Version 1 ignores both. */
   db.dayNames=cleanNames(db.dayNames);
   db.schedule=cleanSchedule(db.schedule);
+  if(typeof cleanOwnWeeks==="function") cleanOwnWeeks();   /* 2026-11-22: his programs' own weeks, kept since (tracker-week.js) */
   /* Part 2 (2026-11-04), additive: the smart session log (db.logs) and the targets (db.targets), tracker-smart.js.
      Version 1 ignores both. */
   if(typeof cleanSmartStores==="function") cleanSmartStores();
@@ -194,8 +200,10 @@ function normalize(){
   if(typeof smartRuleMigrate==="function") smartRuleMigrate();
 }
 function load(){
-  try{var raw=localStorage.getItem(STORE_KEY); db=raw?JSON.parse(raw):seedDb();}catch(e){db=seedDb();}
+  var raw=null;
+  try{raw=localStorage.getItem(STORE_KEY); db=raw?JSON.parse(raw):seedDb();}catch(e){db=seedDb();}
   if(!db||db.app!=="training-tracker") db=seedDb();
+  if(!raw) db.welcomeOpen=true;   /* Part 7: an empty phone opens on the first start (tracker-welcome.js) */
   normalize();
 }
 /* write-through: every change is stored the moment it happens. (A 150 ms debounce lost the last tick
@@ -282,7 +290,7 @@ function maybeCompleteActive(){
    Version 2 (2026-11-04): a bottom bar with four destinations (Today, Workout, Progress, More) and the pages
    reached from More. The v1 view ids and names stay: "programs" = Workout (the old Plan), "library" = Programs,
    "log" = Notes, "nutrition" = Fuel. The More tab stays selected while one of its pages is open. */
-var VIEWS=["today","programs","progress","more","library","exercises","log","nutrition","settings","schedule","progedit"];
+var VIEWS=["today","programs","progress","more","library","exercises","log","nutrition","settings","schedule","progedit","welcome"];
 var MORE_PAGES=["library","exercises","log","nutrition","settings"];
 /* the week schedule editor (2026-11-04) is opened from Today or from More: that tab stays selected, and its back
    control (and Android back, tracker-week.js) returns there */
@@ -295,9 +303,10 @@ function showView(name){
   VIEWS.forEach(function(v){var el=$("#view-"+v); if(el)el.hidden=(v!==name);});
   var nav=navOf(name);
   $$(".tab").forEach(function(b){b.classList.toggle("sel",b.getAttribute("data-view")===nav);});
+  document.body.classList.toggle("welcomeOn", name==="welcome");   /* Part 7: the first start hides the bottom bar */
   if(name!=="programs"){ var nb=$("#nextBar"); if(nb){ nb.hidden=true; nb.innerHTML=""; } }   /* the Next pill lives only on the Workout */
   ({today:renderToday, programs:renderPlan, progress:renderProgress, more:renderMore, library:renderLibrary, exercises:renderExercises,
-    log:renderLog, nutrition:renderNutrition, settings:renderSettings, schedule:renderSchedule, progedit:renderProgEdit}[name])();
+    log:renderLog, nutrition:renderNutrition, settings:renderSettings, schedule:renderSchedule, progedit:renderProgEdit, welcome:renderWelcome}[name])();
   if(typeof onViewShown==="function") onViewShown(name);   /* the rest pill, keep-awake (tracker-session.js) */
   window.scrollTo(0,0);
 }
@@ -321,7 +330,10 @@ document.addEventListener("click",function(e){
   if(act==="modalcustom"){ var cu=$(".mCustom"); if(cu){ cu.hidden=false; var ni=$("#mNum"); if(ni&&ni.focus) ni.focus(); } return; }
   if(act==="modalok"){ var mi=$("#mText")||$("#mNum"); modalSubmit(mi?mi.value:undefined); return; }
   if(act==="modalcancel"){ closeModal(); return; }
-  if(act==="gotoplan"||act==="prog"){ ui.planProg=t.getAttribute("data-prog"); ui.planWeek=shownCurrentWeek(ui.planProg); ui.planLastProg=ui.planProg; act==="gotoplan"?showView("programs"):renderPlan(); return; }
+  if(act==="gotoplan"||act==="prog"){ ui.planProg=t.getAttribute("data-prog"); if(typeof followDay==="function") followDay(ui.planProg); ui.planWeek=shownCurrentWeek(ui.planProg); ui.planLastProg=ui.planProg; act==="gotoplan"?showView("programs"):renderPlan(); return; }
+  /* Part 5 (2026-11-22): a program's On switch, and the Workout of a program that is on (tracker-week.js) */
+  if(act==="progon"){ var opid=t.getAttribute("data-prog"); if(isOn(opid)) turnOff(opid); else turnOn(opid); return; }
+  if(act==="openprog"){ var oq=t.getAttribute("data-prog"), od=progDays(oq)[0]; if(od && isOn(oq)){ clearPreview(); ui.planProg=od; followDay(od); ui.planWeek=shownCurrentWeek(od); ui.planLastProg=od; showView("programs"); } return; }
   if(act==="switchprogram"){ var pid=t.getAttribute("data-prog"); if(db.programLib[pid]){ if(pid===db.activeProgram) showView("programs"); else openSwitchModal(pid); } return; }
   if(act==="previewstart"){ startTraining(t.getAttribute("data-prog")); return; }
   if(act==="previewreturn"){ clearPreview(); ui.planWeek=null; ui.planLastProg=null; renderPlan(); return; }
@@ -330,6 +342,8 @@ document.addEventListener("click",function(e){
   if(/^body/.test(act) && typeof bodyClick==="function" && bodyClick(act, t)) return;   /* 2026-11-11: the body measurements (tracker-body.js) */
   if(typeof editorClick==="function" && editorClick(act, t)) return;   /* Part 2: Programs and the program editor (tracker-editor.js) */
   if(/^cat/.test(act) && typeof catalogClick==="function" && catalogClick(act, t)) return;   /* Part 2: the catalogue's filters (tracker-catalog.js) */
+  if(act==="staradd" && typeof addStarter==="function"){ addStarter(t.getAttribute("data-star")); return; }   /* Part 6: a starter program added (tracker-starters.js) */
+  if(/^wel/.test(act) && typeof welcomeClick==="function" && welcomeClick(act, t)) return;   /* Part 7: the first start (tracker-welcome.js) */
   if(act==="setpace"){ var spp=t.getAttribute("data-prog"), spm=t.getAttribute("data-mode"); if(PROGRESSION_MODES[spm]){ progStateFor(spp).rateMode=spm; save(); renderLibrary(); } return; }
   if(act==="week"){ ui.planWeek=+t.getAttribute("data-week"); if($("#modal.open")) closeModal(); renderPlan(); return; }
   if(act==="weekdone"){ onWeekDone(t); return; }   /* v1 week-done, then the summary (tracker-session.js) */
@@ -397,4 +411,4 @@ $("#importFile").addEventListener("change",function(ev){
 load();
 drawNavIcons();
 sessionInit();
-showView("today");
+showView(db.welcomeOpen ? "welcome" : "today");

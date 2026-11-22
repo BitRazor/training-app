@@ -111,3 +111,109 @@ function catalogDetailsHtml(exId){
   return how + '<div class="sheetSec"><div class="sectH">Details</div><div class="factList">' + row("Muscles", list(c.primaryMuscles)) + row("Helpers", list(c.secondaryMuscles)) + row("Pattern", catLabel(c.pattern)) + row("Equipment", catLabel(c.equipment)) +
     row("Level", catLabel(c.level)) + row("Type", catLabel(c.type)) + row("Mechanic", catLabel(c.mechanic)) + row("Force", catLabel(c.force)) + row("Sides", catLabel(c.laterality)) + row("Where", catLabel(c.location)) + '</div></div>';
 }
+
+/* ---------- Parts 2 and 3 of the friends' version (2026-11-22): the core exercise list and automatic rest ----------
+   (plan.md "The design" 2 and 3; Claude's calls in decisions.md 2026-11-22 "The core exercise list and automatic rest: how")
+   CORE_EXERCISES: the about 150 common gym exercises the app knows best (the ones on the program days, the usual gym lifts
+   and swaps), each with its class: big (big compound), other (other compound), isolation, core, hold, carry; "isolation:12-20"
+   gives a small lift its own range. coreOf(id) adds the range (the program days' own exercises keep theirs), the time a set
+   takes and the equipment. The rest of the catalogue stays searchable as before.
+   autoRestSec: big 2:30, other 2:00, isolation 1:30, core, holds and carries 1:00; a range around 6 reps or fewer +30 s,
+   around 15 or more -15 s; never under 0:45; in 15 s steps. Research (PubMed): longer rests (over 2 min) give the most
+   strength in trained lifters (Grgic 2018, doi 10.1007/s40279-017-0788-x); a many-joint lift needs longer than a one-joint
+   lift (Senna 2016, doi 10.1519/JSC.0000000000001142); for muscle size over 60 s helps a little and over 90 s adds
+   nothing clear (Singer 2024, doi 10.3389/fspor.2024.1429789). */
+var CORE_EXERCISES = {
+  "atg-split-squat": "other", "rdl": "big", "leg-curl": "isolation",
+  "tibialis-raise": "isolation", "hip-flexion": "isolation", "copenhagen-plank": "hold",
+  "suitcase-carry": "carry", "reverse-wrist-curl": "isolation", "cable-pulldown": "other",
+  "cable-row": "other", "triceps-overhead": "isolation", "face-pulls": "isolation",
+  "lu-raise": "isolation", "calf-raise-standing": "isolation", "db-overhead-press": "other",
+  "side-lying-er": "isolation", "back-extension-45": "other", "bear-crawl": "core",
+  "bear-step-through": "core", "hollow-hold": "hold", "lateral-step-down": "other",
+  "sissy-squat": "other", "reverse-nordic": "other", "glute-bridge-hold": "hold",
+  "rkc-plank": "hold", "towel-stretch": "hold", "chin-tuck": "hold",
+  "neck-curl": "isolation", "neck-extension": "isolation", "db-fly": "isolation",
+  "fedb:Barbell_Squat": "big", "fedb:Front_Barbell_Squat": "big", "fedb:Leg_Press": "big",
+  "fedb:Hack_Squat": "big", "fedb:Smith_Machine_Squat": "big", "fedb:Goblet_Squat": "other",
+  "fedb:Barbell_Deadlift": "big", "fedb:Sumo_Deadlift": "big", "fedb:Trap_Bar_Deadlift": "big",
+  "fedb:Stiff-Legged_Barbell_Deadlift": "big", "fedb:Stiff-Legged_Dumbbell_Deadlift": "other", "fedb:Barbell_Hip_Thrust": "big",
+  "fedb:Barbell_Glute_Bridge": "other", "fedb:Good_Morning": "other", "fedb:Dumbbell_Lunges": "other",
+  "fedb:Barbell_Lunge": "other", "fedb:Dumbbell_Rear_Lunge": "other", "fedb:Split_Squat_with_Dumbbells": "other",
+  "fedb:Barbell_Walking_Lunge": "other", "fedb:Bodyweight_Walking_Lunge": "other", "fedb:Dumbbell_Step_Ups": "other",
+  "fedb:Barbell_Step_Ups": "other", "fedb:Single_Leg_Glute_Bridge": "other", "fedb:Leg_Extensions": "isolation",
+  "fedb:Lying_Leg_Curls": "isolation", "fedb:Seated_Leg_Curl": "isolation", "fedb:Thigh_Abductor": "isolation",
+  "fedb:Thigh_Adductor": "isolation", "fedb:Glute_Kickback": "isolation", "fedb:Calf_Press_On_The_Leg_Press_Machine": "isolation:12-20",
+  "fedb:Standing_Dumbbell_Calf_Raise": "isolation:12-20", "fedb:Smith_Machine_Calf_Raise": "isolation:12-20", "fedb:Barbell_Bench_Press_-_Medium_Grip": "big",
+  "fedb:Barbell_Incline_Bench_Press_-_Medium_Grip": "big", "fedb:Decline_Barbell_Bench_Press": "big", "fedb:Incline_Dumbbell_Press": "other",
+  "fedb:Decline_Dumbbell_Bench_Press": "other", "fedb:Leverage_Chest_Press": "other", "fedb:Pushups": "other",
+  "fedb:Dips_-_Chest_Version": "other", "fedb:Incline_Dumbbell_Flyes": "isolation", "fedb:Cable_Crossover": "isolation",
+  "fedb:Butterfly": "isolation", "fedb:Close-Grip_Barbell_Bench_Press": "other", "fedb:Standing_Military_Press": "big",
+  "fedb:Seated_Barbell_Military_Press": "big", "fedb:Dumbbell_Shoulder_Press": "other", "fedb:Seated_Dumbbell_Press": "other",
+  "fedb:Arnold_Dumbbell_Press": "other", "fedb:Machine_Shoulder_Military_Press": "other", "fedb:Front_Dumbbell_Raise": "isolation",
+  "fedb:Reverse_Flyes": "isolation:12-20", "fedb:Reverse_Machine_Flyes": "isolation:12-20", "fedb:Upright_Barbell_Row": "other",
+  "fedb:Barbell_Shrug": "isolation:12-20", "fedb:Dumbbell_Shrug": "isolation:12-20", "fedb:Pullups": "big",
+  "fedb:Chin-Up": "big", "fedb:Wide-Grip_Lat_Pulldown": "other", "fedb:Close-Grip_Front_Lat_Pulldown": "other",
+  "fedb:Underhand_Cable_Pulldowns": "other", "fedb:V-Bar_Pulldown": "other", "fedb:Seated_Cable_Rows": "other",
+  "fedb:Bent_Over_Barbell_Row": "big", "fedb:Bent_Over_Two-Dumbbell_Row": "other", "fedb:One-Arm_Dumbbell_Row": "other",
+  "fedb:T-Bar_Row_with_Handle": "other", "fedb:Inverted_Row": "other", "fedb:Straight-Arm_Dumbbell_Pullover": "isolation",
+  "fedb:Straight-Arm_Pulldown": "isolation", "fedb:Rack_Pulls": "big", "fedb:Barbell_Curl": "isolation",
+  "fedb:Dumbbell_Bicep_Curl": "isolation", "fedb:Hammer_Curls": "isolation", "fedb:Preacher_Curl": "isolation",
+  "fedb:EZ-Bar_Curl": "isolation", "fedb:Cable_Hammer_Curls_-_Rope_Attachment": "isolation", "fedb:Concentration_Curls": "isolation",
+  "fedb:Incline_Dumbbell_Curl": "isolation", "fedb:Triceps_Pushdown": "isolation", "fedb:Triceps_Pushdown_-_Rope_Attachment": "isolation",
+  "fedb:Lying_Triceps_Press": "isolation", "fedb:EZ-Bar_Skullcrusher": "isolation", "fedb:Standing_Dumbbell_Triceps_Extension": "isolation",
+  "fedb:Dips_-_Triceps_Version": "other", "fedb:Bench_Dips": "other", "fedb:Tricep_Dumbbell_Kickback": "isolation",
+  "fedb:Palms-Down_Wrist_Curl_Over_A_Bench": "isolation:12-20", "fedb:Palms-Up_Barbell_Wrist_Curl_Over_A_Bench": "isolation:12-20", "fedb:Reverse_Barbell_Curl": "isolation",
+  "fedb:Plank": "hold", "fedb:Crunches": "core", "fedb:Cable_Crunch": "core",
+  "fedb:Hanging_Leg_Raise": "core", "fedb:Ab_Roller": "core", "fedb:Russian_Twist": "core",
+  "fedb:Pallof_Press": "hold", "fedb:Dead_Bug": "core", "fedb:Decline_Crunch": "core",
+  "fedb:Knee_Hip_Raise_On_Parallel_Bars": "core", "fedb:Standing_Cable_Wood_Chop": "core", "fedb:Air_Bike": "core",
+  "fedb:Farmers_Walk": "carry", "fedb:Flat_Bench_Lying_Leg_Raise": "core", "fedb:Side_Bridge": "hold",
+  "fedb:Cable_Reverse_Crunch": "core", "fedb:Kettlebell_One-Legged_Deadlift": "other", "fedb:Dumbbell_Squat": "other",
+  "fedb:Bodyweight_Squat": "other", "fedb:Cable_Rear_Delt_Fly": "isolation:12-20",
+  "fedb:Dumbbell_Lying_Rear_Lateral_Raise": "isolation:12-20", "fedb:Machine_Preacher_Curls": "isolation", "fedb:Cable_Preacher_Curl": "isolation",
+  "fedb:Spider_Curl": "isolation", "fedb:Overhead_Cable_Curl": "isolation", "fedb:Push_Press": "other",
+  "fedb:Lateral_Raise_-_With_Bands": "isolation:12-20", "fedb:Smith_Machine_Bench_Press": "other", "fedb:Smith_Machine_Incline_Bench_Press": "other",
+  "fedb:Leverage_Incline_Chest_Press": "other", "fedb:Leverage_Shoulder_Press": "other", "fedb:Leverage_High_Row": "other",
+  "fedb:Leverage_Iso_Row": "other", "fedb:Leverage_Shrug": "isolation:12-20", "fedb:Cable_Seated_Lateral_Raise": "isolation:12-20",
+  "fedb:Weighted_Pull_Ups": "big", "fedb:Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists": "core", "fedb:Barbell_Seated_Calf_Raise": "isolation:12-20",
+  "fedb:One-Arm_Kettlebell_Swings": "other", "fedb:Seated_Side_Lateral_Raise": "isolation:12-20"
+};
+var CORE_CLASS_RANGE = { big: [6, 10, "reps"], other: [8, 12, "reps"], isolation: [10, 15, "reps"], core: [10, 15, "reps"], hold: [20, 45, "s"], carry: [24, 36, "s"] };
+var CORE_CLASS_REST = { big: 150, other: 120, isolation: 90, core: 60, hold: 60, carry: 60 };
+var CORE_CLASS_LABEL = { big: "Big compound", other: "Other compound", isolation: "Isolation", core: "Core", hold: "Hold", carry: "Carry" };
+function coreCatalogEntry(id){ if(typeof EXERCISE_CATALOG === "undefined") return null; for(var i = 0; i < EXERCISE_CATALOG.length; i++) if(EXERCISE_CATALOG[i].id === id) return EXERCISE_CATALOG[i]; return null; }
+function round5(x){ return Math.round(x / 5) * 5; }
+/* a core exercise's data, else null: {cls, label, lo, hi, unit, setSec, equipment} */
+function coreOf(id){
+  var v = (typeof CORE_EXERCISES !== "undefined" && CORE_EXERCISES[id]) || null; if(!v) return null;
+  var m = /^([a-z]+)(?::(\d+)-(\d+))?$/.exec(v), cls = m ? m[1] : v, c = coreCatalogEntry(id), base = CORE_CLASS_RANGE[cls]; if(!base) return null;
+  var lo = m && m[2] ? +m[2] : base[0], hi = m && m[3] ? +m[3] : base[1], unit = base[2];
+  if(c && c.source === "owner" && unit === "reps" && typeof smartRange === "function" && typeof exById === "function"){ var r = smartRange({}, exById(id)); lo = r.lo; hi = r.hi; }   /* his exercises keep their own range */
+  var mid = (lo + hi) / 2, uni = !!c && c.laterality === "unilateral";
+  var setSec = round5(unit === "s" ? mid + 10 : mid * 4.5 * (uni ? 2 : 1) + 10);
+  return { cls: cls, label: CORE_CLASS_LABEL[cls], lo: lo, hi: hi, unit: unit, setSec: setSec, equipment: (c && c.equipment) || "" };
+}
+/* the class of any exercise: the core list's, else worked out from the catalogue (pattern, mechanic, force, equipment) */
+function restClassOf(id){
+  var co = coreOf(id); if(co) return co.cls;
+  var c = coreCatalogEntry(id); if(!c) return "other";
+  if(c.pattern === "carry") return "carry";
+  if(c.force === "static") return "hold";
+  if(c.pattern === "core-anti-movement" || c.pattern === "rotation") return "core";
+  if(c.mechanic === "isolation") return "isolation";
+  if(c.equipment === "barbell" && /^(squat|hinge|horizontal-push|vertical-push|horizontal-pull)$/.test(c.pattern)) return "big";
+  return "other";
+}
+/* the worked-out rest in seconds for a class and a range */
+function autoRestSec(cls, lo, hi, unit){
+  var s = CORE_CLASS_REST[cls] || 120, mid = (lo + hi) / 2;
+  if(unit !== "s" && cls !== "hold" && cls !== "carry"){ if(mid <= 6) s += 30; else if(mid >= 15) s -= 15; }
+  return Math.max(45, Math.round(s / 15) * 15);
+}
+/* the worked-out rest of a program entry: its exercise's class and its range (a hold or carry by its class) */
+function autoRestFor(en){
+  if(!en || !en.exerciseId) return null;
+  var ex = (typeof exById === "function" && exById(en.exerciseId)) || {}, cls = restClassOf(en.exerciseId), r = smartRange(en, ex);
+  return autoRestSec(cls, r.lo, r.hi, r.unit);
+}

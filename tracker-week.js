@@ -33,7 +33,8 @@ var NAME_MAX = 30;
 function progDays(pid){ var P = (pid && typeof getProgram === "function") ? getProgram(pid) : null; return (P && Array.isArray(P.days) && P.days.length) ? P.days.slice() : STRENGTH_DAYS.slice(); }
 /* Part 4 (2026-11-22): the editor's weekday chips place the days of any program, so the week functions take one */
 function progWorkoutDays(pid){ return progDays(pid).concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []); }
-function workoutDays(){ return progWorkoutDays(db && db.activeProgram); }
+/* Part 5 (2026-11-22): with several programs on, the days of all of them */
+function workoutDays(){ return multiOn() ? onGymDays().concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []) : progWorkoutDays(db && db.activeProgram); }
 /* every day a built-in program can put on the shared week (a day added to a built-in's edited copy too) */
 function builtinWeekDays(){ var o = []; (typeof BUILTIN_IDS !== "undefined" ? BUILTIN_IDS : PROGRAM_ORDER).forEach(function(id){ progDays(id).forEach(function(d){ if(o.indexOf(d) < 0) o.push(d); }); }); return o.concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []); }
 function dayChoices(days){ return (days || workoutDays()).concat(["z2", "norwegian-4x4", "rest"]); }
@@ -57,18 +58,26 @@ function defaultOwnWeekFor(pid){
 function defaultOwnWeek(){ return defaultOwnWeekFor(db.activeProgram); }
 /* a program's week as stored: his own program's own week; for a built-in the shared week, unfiltered (the editor's weekday
    chips change only the days tapped, so a day only another built-in has is never dropped unasked) */
-function progWeek(pid){
+function ownWeek(pid){
   if(isOwnPid(pid)){ var up = db.userPrograms[pid]; return (Array.isArray(up.week) && up.week.length === 7) ? up.week : defaultOwnWeekFor(pid); }
   return (db && Array.isArray(db.schedule) && db.schedule.length === 7) ? db.schedule : CURRENT_WEEK;
 }
-/* the week every screen reads: his program's own week, else the shared week (a day another program added shows as rest) */
-function weekPlan(){
-  if(ownActive()) return progWeek(db.activeProgram);
-  var w = progWeek(db && db.activeProgram), mine = workoutDays();
+/* the week the editor's weekday chips of program pid show and change: with several programs on, their one week (Part 5) */
+function progWeek(pid){ return (multiOn() && isOn(pid)) ? weekPlan() : ownWeek(pid); }
+/* the week when pid is the only program on: his program's own week, else the shared week (a day another program added
+   shows as rest) */
+function soloWeek(pid){
+  if(isOwnPid(pid)) return ownWeek(pid);
+  var w = ownWeek(pid), mine = progWorkoutDays(pid);
   if(w.every(function(d){ return !d || !hasWorkout(d) || mine.indexOf(d.ref) >= 0; })) return w;
   return w.map(function(d, j){ return (d && hasWorkout(d) && mine.indexOf(d.ref) < 0) ? makeDay(j, "rest") : d; });
 }
-function weekIsCustom(){ return ownActive() ? Array.isArray(db.userPrograms[db.activeProgram].week) : Array.isArray(db.schedule); }
+/* the week every screen reads: the one program's week, or with several on their one week (Part 5) */
+function weekPlan(){ return multiOn() ? mixWeek() : soloWeek(db && db.activeProgram); }
+function weekIsCustom(){
+  if(multiOn()) return Array.isArray(db.weekMix);
+  return ownActive() ? Array.isArray(db.userPrograms[db.activeProgram].week) : Array.isArray(db.schedule);
+}
 /* the entry a choice makes: label and note from the original week where it has a day there */
 function dayTemplate(c){
   var t = null;
@@ -89,10 +98,16 @@ function sameWeek(a, b){
    only (the first wins); a home workout on top only of a cardio day; anything unknown is rest. The original week,
    or anything that is not 7 days, gives null */
 function cleanSchedule(raw, days, original){
-  if(!Array.isArray(raw) || raw.length !== 7) return null;
   days = days || builtinWeekDays();   /* the shared week holds every built-in's days (Part 2: his own programs keep their own) */
+  var out = cleanWeek(raw, days);
+  if(!out) return null;
+  return sameWeek(out, original || CURRENT_WEEK) ? null : out;
+}
+/* the 7 entries of a stored week made safe against the workouts `days` (cleanSchedule without the "is it the original" step) */
+function cleanWeek(raw, days){
+  if(!Array.isArray(raw) || raw.length !== 7) return null;
   var used = {}, choices = dayChoices(days), isW = function(c){ return days.indexOf(c) >= 0; };
-  var out = raw.map(function(e, j){
+  return raw.map(function(e, j){
     var ok = !!e && typeof e === "object", c = ok ? (e.type === "rest" ? "rest" : e.ref) : "rest";
     if(choices.indexOf(c) < 0 || (isW(c) && used[c])) c = "rest";
     if(isW(c)) used[c] = true;
@@ -101,7 +116,14 @@ function cleanSchedule(raw, days, original){
     if(d.home) used[d.home] = true;
     return d;
   });
-  return sameWeek(out, original || CURRENT_WEEK) ? null : out;
+}
+/* his programs' own weeks made safe at load, after the day tracks hold his days (2026-11-22: cleanUserPrograms had dropped
+   them, so a program of his own went back to the default week at every restart); a stored null (the default) stays null */
+function cleanOwnWeeks(){
+  Object.keys((db && db.userPrograms) || {}).forEach(function(pid){
+    var up = db.userPrograms[pid]; if(!up || !up.own || up.week === undefined) return;
+    up.week = Array.isArray(up.week) ? cleanWeek(up.week, progWorkoutDays(pid)) : null;
+  });
 }
 /* where a workout sits: {j, as: "main" | "home"} or null (not on the week) */
 function slotOf(id, plan){
@@ -116,6 +138,112 @@ function whereText(id, plan){
   plan = plan || weekPlan(); var s = slotOf(id, plan);
   if(!s) return "Not on the week";
   return s.as === "main" ? "On " + WEEKDAY_LONG[s.j] : "With " + WEEKDAY_LONG[s.j] + "'s " + (plan[s.j].type === "hiit" ? "4×4" : "Zone 2");
+}
+
+/* ---------- Part 5 (2026-11-22): several programs on at once (plan.md "The design" 5) ----------
+   db.programsOn (additive, stored only while two or more are on): the programs on, the first leading (the home days stay
+   with it). Programs sharing a workout day (the built-ins share Day A and Day B) are never on together: Switch to is for
+   those. db.weekMix (additive, only while two or more are on): their one week, in the schedule's shape; null = the first
+   program's week with the others' days on the weekdays their own weeks give them where those are rest. The program a day
+   belongs to becomes db.activeProgram while that day is on screen (followDay), so its weeks, ticks and diary stay its own.
+   With one program on nothing is stored and every screen is as before. A stored list without the active program is stale
+   (a version without Part 5 switched programs): then the active program is the one on. */
+function progKnown(id){ return !!(id && typeof SEED_PROGRAM_LIB !== "undefined" && SEED_PROGRAM_LIB[id]); }
+function sharesGymDay(p, q){ var b = progDays(q); return progDays(p).some(function(d){ return b.indexOf(d) >= 0; }); }
+function programsOn(){
+  var act = db && db.activeProgram, a = (db && Array.isArray(db.programsOn)) ? db.programsOn : null, out = [];
+  if(!a || a.indexOf(act) < 0) return act ? [act] : [];
+  a.forEach(function(id){
+    if(!progKnown(id) || out.indexOf(id) >= 0 || (id !== act && sharesGymDay(id, act))) return;
+    if(out.some(function(o){ return sharesGymDay(o, id); })) return;
+    out.push(id);
+  });
+  return out;
+}
+function multiOn(){ return programsOn().length > 1; }
+function isOn(pid){ return programsOn().indexOf(pid) >= 0; }
+function leadProgram(){ return programsOn()[0] || (db && db.activeProgram); }
+function onGymDays(){ var o = []; programsOn().forEach(function(p){ progDays(p).forEach(function(d){ if(o.indexOf(d) < 0) o.push(d); }); }); return o; }
+/* the program on that day `day` belongs to (a home day: the first one on), else null */
+function ownerOf(day){
+  if(typeof HOME_DAYS !== "undefined" && HOME_DAYS.indexOf(day) >= 0) return leadProgram();
+  var on = programsOn(); for(var i = 0; i < on.length; i++) if(progDays(on[i]).indexOf(day) >= 0) return on[i];
+  return null;
+}
+/* the program a day on screen belongs to becomes the current one (several on, not while just looking); true when it changed */
+function followDay(day){
+  if(!day || !multiOn() || (typeof previewing === "function" && previewing())) return false;
+  var o = ownerOf(day); if(!o || o === db.activeProgram) return false;
+  db.activeProgram = o;
+  if(typeof applyDays === "function") applyDays();   /* an edited built-in's days come with it */
+  save(); return true;
+}
+/* why program pid cannot go on: the program on that shares a workout day with it, else null */
+function onBlocker(pid){ var on = programsOn(); for(var i = 0; i < on.length; i++) if(on[i] !== pid && sharesGymDay(on[i], pid)) return on[i]; return null; }
+/* program pid's days onto week w, each on the weekday its own week gives it, where w has rest there */
+function placeOnRest(w, pid){
+  var own = soloWeek(pid);
+  progDays(pid).forEach(function(d){ var s = slotOf(d, own); if(s && s.as === "main" && w[s.j] && w[s.j].type === "rest" && !slotOf(d, w)) w[s.j] = makeDay(s.j, d); });
+  return w;
+}
+function mixBase(){ var on = programsOn(), w = clone(soloWeek(on[0])); on.slice(1).forEach(function(p){ placeOnRest(w, p); }); return w; }
+function mixWeek(){ var c = (db && Array.isArray(db.weekMix)) ? cleanWeek(db.weekMix, workoutDays()) : null; return c || mixBase(); }
+/* the mixed week to store: cleaned; null when it is the one worked out anyway */
+function keepMix(w){ var c = cleanWeek(w, workoutDays()); return (!c || sameWeek(c, mixBase())) ? null : c; }
+/* back to one program on: the week as he left it becomes that program's own */
+function storeSoloWeek(pid, w){
+  if(isOwnPid(pid)) db.userPrograms[pid].week = cleanSchedule(w, progWorkoutDays(pid), defaultOwnWeekFor(pid));
+  else db.schedule = cleanSchedule(w);
+}
+function joinAnd(a){ return a.length < 2 ? (a[0] || "") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
+function redrawAfterOn(){
+  if(ui.view === "library") renderLibrary(); else if(ui.view === "today") renderToday(); else if(ui.view === "schedule") renderSchedule();
+  else if(ui.view === "programs") renderPlan(); else if(ui.view === "progedit" && typeof renderProgEdit === "function") renderProgEdit();
+}
+/* On: a program starts beside the ones on. Nothing stored changes but its own state (a first start date, empty week counts
+   for its days) and, for a smart program joining a 12-week one, targets for lifts that have none yet. A program run
+   before carries on where it stopped. Its days go where its own week puts them if those weekdays are rest. */
+function turnOn(pid){
+  if(!progKnown(pid) || isOn(pid) || onBlocker(pid)) return false;
+  var undo = undoPoint(), on = programsOn(), mix = multiOn() ? clone(mixWeek()) : null, ps = progStateFor(pid);
+  if(!ps.startedAt) ps.startedAt = nowISO();
+  progDays(pid).forEach(function(d){ if(!ps.progress[d]) ps.progress[d] = { weeksDone: [] }; else if(!ps.progress[d].weeksDone) ps.progress[d].weeksDone = []; });
+  if(typeof isSmartProg === "function" && isSmartProg(pid) && !isSmartProg(db.activeProgram) && typeof carryTargetsFrom === "function"){
+    var c = carryTargetsFrom(db.activeProgram, {}) || {};
+    if(!db.targets || typeof db.targets !== "object") db.targets = {};
+    for(var id in c){ if(!db.targets[id]) db.targets[id] = c[id]; }
+  }
+  db.programsOn = on.concat([pid]);
+  db.weekMix = mix ? keepMix(placeOnRest(mix, pid)) : null;
+  save(); redrawAfterOn();
+  toast(getProgram(pid).name + " is on: put its days on your week", { undo: undo });
+  return true;
+}
+/* Off (two or more on): its weekdays become rest; its weeks and diary stay. Back to one program, the week as he left it
+   becomes that program's week. Returns the weekdays (0-6) that became rest, or null when refused (the last one on) */
+function offCore(pid){
+  if(!isOn(pid) || !multiOn()) return null;
+  var w = clone(weekPlan()), rest = [];
+  progDays(pid).forEach(function(d){ var s = slotOf(d, w); if(s && s.as === "main"){ w[s.j] = makeDay(s.j, "rest"); rest.push(s.j); } });
+  var on = programsOn().filter(function(id){ return id !== pid; });
+  if(db.activeProgram === pid){
+    db.activeProgram = on[0];
+    if(typeof clearPreview === "function") clearPreview();
+    ui.planProg = null; ui.planWeek = null; ui.planLastProg = null;
+    if(typeof applyDays === "function") applyDays();
+  }
+  if(on.length > 1){ db.programsOn = on; db.weekMix = keepMix(w); }
+  else { delete db.programsOn; delete db.weekMix; storeSoloWeek(on[0], w); }
+  return rest.sort(function(a, b){ return a - b; });
+}
+function turnOff(pid){
+  if(!isOn(pid) || !multiOn()) return false;
+  var undo = undoPoint(), nm = getProgram(pid).name, r = offCore(pid);
+  if(!r) return false;
+  save(); redrawAfterOn();
+  var days = r.map(function(j){ return WEEKDAY_LONG[j]; });
+  toast(nm + " is off" + (days.length ? ": " + joinAnd(days) + (days.length === 1 ? " is" : " are") + " now rest." : ".") + " Its weeks and diary stay.", { undo: undo });
+  return true;
 }
 
 /* ---------- names ---------- */
@@ -190,7 +318,8 @@ function openDaySheet(j){
 }
 /* store an edited week of program pid (null when it is the original again) and redraw */
 function commitWeekFor(pid, wk){
-  if(isOwnPid(pid)) db.userPrograms[pid].week = cleanSchedule(wk, progWorkoutDays(pid), defaultOwnWeekFor(pid));   /* his program's own week */
+  if(multiOn() && isOn(pid)) db.weekMix = keepMix(wk);   /* Part 5: several programs on, their one week */
+  else if(isOwnPid(pid)) db.userPrograms[pid].week = cleanSchedule(wk, progWorkoutDays(pid), defaultOwnWeekFor(pid));   /* his program's own week */
   else db.schedule = cleanSchedule(wk);
   save();
   if(ui.view === "schedule") renderSchedule(); else if(ui.view === "today") renderToday(); else if(ui.view === "progedit" && typeof renderProgEdit === "function") renderProgEdit();
@@ -246,7 +375,7 @@ function setDayHome(j, hid){
 }
 function resetWeek(){
   if(!weekIsCustom()) return;
-  var undo = undoPoint(); if(ownActive()) db.userPrograms[db.activeProgram].week = null; else db.schedule = null; save(); renderSchedule();
+  var undo = undoPoint(); if(multiOn()) db.weekMix = null; else if(ownActive()) db.userPrograms[db.activeProgram].week = null; else db.schedule = null; save(); renderSchedule();
   toast("Back to the original week", { undo: undo });
 }
 

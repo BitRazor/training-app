@@ -51,6 +51,8 @@ function cleanEntry(e){
   if(e.repLo != null) o.repLo = intIn(e.repLo, 1, 50, 8);
   if(e.repHi != null) o.repHi = Math.max(o.repLo || 1, intIn(e.repHi, 1, 50, 12));
   if(e.ss != null){ var n = intIn(e.ss, 1, 99, 0); if(n) o.ss = n; else delete o.ss; }
+  /* Part 3: an auto rest is worked out again (the rule may change in a later version); anything else is his own number */
+  if(e.restAuto === true && typeof autoRestFor === "function"){ var a = autoRestFor(o); if(a != null) o.restSec = a; o.restAuto = true; } else delete o.restAuto;
   return o;
 }
 function cleanUserPrograms(){
@@ -71,6 +73,7 @@ function cleanUserPrograms(){
     var name = (typeof p.name === "string" && p.name.trim()) ? p.name.replace(/\s+/g, " ").trim().slice(0, PROG_NAME_MAX) : null;
     if(!days.length || (own && !name)) continue;
     P[pid] = { id: pid, name: name, days: days, own: own };
+    if(own && p.week !== undefined) P[pid].week = Array.isArray(p.week) ? p.week : null;   /* 2026-11-22: his program's own week is kept (made safe by cleanOwnWeeks once the day tracks hold his days); it had been dropped at every load */
     days.forEach(function(d){ used[d] = true; });
     if(!own) Object.keys(Dy).forEach(function(k2){ if(k2.indexOf(pid + "/") === 0) used[k2] = true; });
   }
@@ -166,6 +169,7 @@ function deleteProgram(pid){
   openModal({ title: "Delete " + P.name + "?", message: "The program and its days go. Your diary keeps every lift you logged with it.", okLabel: "Delete", cls: "dangerSheet",
     onSubmit: function(){
       var undo = undoPoint();
+      if(multiOn() && isOn(pid)) offCore(pid);   /* Part 5: on beside others: off first, its weekdays rest */
       P.days.forEach(function(d){ delete db.userDays[d]; });
       delete db.userPrograms[pid];
       if(db.activeProgram === pid){ db.activeProgram = SMART_PROGRAM_ID; clearPreview(); ui.planProg = null; ui.planWeek = null; ui.planLastProg = null; }
@@ -200,7 +204,7 @@ function entryNums(pid, en){
 }
 function entryMore(pid, en){
   var ex = exById(en.exerciseId) || {}, P = getProgram(pid), k = smartKind(en, ex), t = P.smart ? smartTarget(en.exerciseId) : null, parts = [];
-  parts.push("rest " + mmssRest(en.restSec || 0));
+  parts.push("rest " + (en.restAuto ? "auto " : "") + mmssRest(en.restSec || 0));
   if(t && t.kg != null && (k === "lift" || k === "carry" || k === "bw")) parts.push(smartWeightText(k, t.kg));
   if(en.ramp) parts.push("warm-up set");
   return " · " + parts.join(" · ");
@@ -252,13 +256,15 @@ function renderProgEdit(){
       }).join("") + '</div>' : '<div class="note edEmpty">No exercises yet. Add the first one.</div>') +
       '<button class="btn primary block" data-act="edaddex">' + icon("plus") + 'Add exercise</button></div>';
   }
-  if(pid === db.activeProgram) h += '<button class="btn block edWeek" data-view="schedule">' + icon("calendar") + 'Week schedule: which day is which</button>';
+  if(pid === db.activeProgram || (multiOn() && isOn(pid))) h += '<button class="btn block edWeek" data-view="schedule">' + icon("calendar") + 'Week schedule: which day is which</button>';
   $("#view-progedit").innerHTML = h;
 }
 
 /* ---------- Part 4 (2026-11-22): the weekday chips of each workout day ---------- */
 /* Today follows this program's week: the program he trains, or a built-in while he trains a built-in (they share one) */
-function weekFollowed(pid){ return pid === db.activeProgram || (isBuiltin(pid) && isBuiltin(db.activeProgram)); }
+function weekFollowed(pid){
+  if(typeof multiOn === "function" && multiOn()) return isOn(pid);   /* Part 5: the programs on share one week */
+  return pid === db.activeProgram || (isBuiltin(pid) && isBuiltin(db.activeProgram)); }
 /* Mon–Sun for workout day d (index i): on where it sits; a weekday holding something else is marked (a dot in its colour) */
 function wdChipsHtml(d, i, plan){
   return '<div class="edWk" role="group" aria-label="' + esc(dayName(d)) + ': its weekday">' + plan.map(function(x, j){
@@ -271,7 +277,8 @@ function wdChipsHtml(d, i, plan){
    where it was); a weekday holding something else asks first. Every change has an Undo (tracker-week.js weekChange) */
 function edWeekday(i, j){
   var pid = edPid(), d = (getProgram(pid).days || [])[i], plan = progWeek(pid), x = plan[j]; if(!d || !x) return;
-  var here = hasWorkout(x) && x.ref === d, r = weekChange(plan, j, here ? "rest" : d, isOwnPid(pid) ? progWorkoutDays(pid) : builtinWeekDays());
+  var ids = (multiOn() && isOn(pid)) ? workoutDays() : isOwnPid(pid) ? progWorkoutDays(pid) : builtinWeekDays();   /* Part 5: the shared week's workouts */
+  var here = hasWorkout(x) && x.ref === d, r = weekChange(plan, j, here ? "rest" : d, ids);
   var go = function(){ var undo = undoPoint(); commitWeekFor(pid, r.wk); toast(r.text, { undo: undo }); };
   if(here || choiceOf(x) === "rest"){ go(); return; }
   var from = slotOf(d, plan), nm = dayName(d), wd = WEEKDAY_LONG[j];
@@ -368,8 +375,9 @@ function pickExercise(id){
   var pid = edPid(), d = edDayId(), cur = dayDef(pid, d);
   /* ticks, logs and the diary key on the day and the lift, so one lift can sit on a day only once */
   if(cur && cur.entries.some(function(e){ return e.exerciseId === id; })){ closeModal(); toast(ex.name + " is already in " + dayName(d)); return; }
-  var def = dayMut(pid, d), r = smartRange({}, ex), en = { exerciseId: id, block: "main", sets: 3, restSec: 90 };
-  if(r.unit === "reps" && smartKind({}, ex) !== "effort"){ en.repLo = r.lo; en.repHi = r.hi; }
+  var def = dayMut(pid, d), r = smartRange({}, ex), co = typeof coreOf === "function" ? coreOf(id) : null, en = { exerciseId: id, block: "main", sets: 3, restSec: 90 };
+  if(r.unit === "reps" && smartKind({}, ex) !== "effort"){ var cr = co && co.unit === "reps"; en.repLo = cr ? co.lo : r.lo; en.repHi = cr ? co.hi : r.hi; }   /* Part 2: a core exercise's own range */
+  if(typeof autoRestFor === "function"){ en.restAuto = true; en.restSec = autoRestFor(en) || 90; }   /* Part 3: rest auto */
   def.entries.push(en); closeModal(); afterEdit();
   toast(ex.name + " added to " + dayName(d));
 }
@@ -386,21 +394,36 @@ function openEdEx(i){
   var ranged = smart && (k === "lift" || k === "carry" || k === "bw");
   var h = '<div class="edExSheet"><div class="list">' + stepper("Sets", "sets", en.sets || 1) +
     (ranged ? stepper(sec ? "Seconds from" : "Reps from", "repLo", rangeShown(en, ex, r.lo)) + stepper(sec ? "Seconds up to" : "Reps up to", "repHi", rangeShown(en, ex, r.hi), "Then the weight goes up") : smart && k === "hold" ? '<div class="li"><span class="liB"><span class="liT">Hold</span><span class="liS">20–45 s, then the harder version</span></span></div>' : '') +
-    stepper("Rest", "restSec", mmssRest(en.restSec || 0), "Between its sets") + '</div>';
+    restRowsHtml(en, stepper) + '</div>';
   if(ranged) h += '<div class="list"><button class="li" data-act="edstart"><span class="liB"><span class="liT">Starting weight</span><span class="liS">' + (t ? "Its current target · the keypad changes it" : "Left empty, its first set asks") + '</span></span>' +
     '<b class="liV edStart">' + (t && t.kg != null ? smartWeightText(k, t.kg) : "–") + '</b>' + icon("chevR", "chev") + '</button></div>';
   h += '<div class="list">' + toggle("edramp", "Warm-up set", !!en.ramp, "One light set first when the target is 11 reps or fewer") + '</div>' +   /* a superset: the link between the rows (Part 4) */
     '<button class="btn danger block edRm" data-act="edrmex">' + icon("trash") + 'Remove from ' + esc(dayName(d)) + '</button></div>';
   openSheet(ex.name, h, { cls: "edExCard" });
 }
+/* Part 3 (2026-11-22): the sheet's rest: "auto" with Set my own, else his own number's stepper with Back to auto offered */
+function restRowsHtml(en, stepper){
+  var auto = typeof autoRestFor === "function" ? autoRestFor(en) : null;
+  if(en.restAuto) return '<div class="li edRow edRestRow"><span class="liB"><span class="liT">Rest</span><span class="liS">Worked out from the exercise and its reps</span></span><b class="edRestAutoVal">auto ' + mmssRest(en.restSec || 0) + '</b></div>' +
+    '<div class="edRestBtns"><button class="btn sm" data-act="edrestown">' + icon("edit") + 'Set my own</button></div>';
+  return stepper("Rest", "restSec", mmssRest(en.restSec || 0), "Between its sets") +
+    (auto != null ? '<div class="edRestBtns"><button class="btn sm" data-act="edrestauto">' + icon("undo") + 'Back to auto (' + mmssRest(auto) + ')</button></div>' : '');
+}
+/* Set my own (the number stays, the stepper opens) / Back to auto (the worked-out rest) for the exercise in the sheet */
+function edRestMode(auto){
+  var def = dayMut(edPid(), edDayId()), en = def && def.entries[ui.editEx]; if(!en) return;
+  if(auto){ en.restAuto = true; en.restSec = autoRestFor(en) || en.restSec; } else delete en.restAuto;
+  afterEdit(); openEdEx(ui.editEx);
+}
 /* one step of a number of exercise i of the day being edited, saved at once (the sheet's steppers and the row's, Part 4) */
 function edStepAt(i, f, dir){
   var pid = edPid(), d = edDayId(), def = dayMut(pid, d), en = def && def.entries[i]; if(!en) return null;
   var ex = exById(en.exerciseId) || {}, r = smartRange(en, ex);
   if(f === "sets") en.sets = intIn((en.sets || 1) + dir, 1, 10, 3);
-  else if(f === "restSec") en.restSec = intIn((en.restSec || 0) + dir * 15, 0, 600, 90);
+  else if(f === "restSec"){ en.restSec = intIn((en.restSec || 0) + dir * 15, 0, 600, 90); delete en.restAuto; }   /* a step makes it his own */
   else if(f === "repLo"){ en.repHi = r.hi; en.repLo = intIn(r.lo + dir, 1, r.hi, r.lo); }
   else if(f === "repHi"){ en.repLo = r.lo; en.repHi = intIn(r.hi + dir, r.lo, 50, r.hi); }
+  if(en.restAuto && typeof autoRestFor === "function"){ var a = autoRestFor(en); if(a != null) en.restSec = a; }   /* Part 3: an auto rest follows the range */
   afterEdit();
   return en;
 }
@@ -459,6 +482,8 @@ function editorClick(act, t){
     case "edaddex": openPicker(); return true;
     case "edpick": pickExercise(t.getAttribute("data-ex")); return true;
     case "edstep": edStep(t.getAttribute("data-f"), +t.getAttribute("data-d")); return true;
+    case "edrestown": edRestMode(false); return true;
+    case "edrestauto": edRestMode(true); return true;
     case "edstart": edStart(); return true;
     case "edramp": edRamp(); return true;
     case "edrmex": edRemoveEx(); return true;

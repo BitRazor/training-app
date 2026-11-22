@@ -14,7 +14,7 @@ function isHomeDay(prog){ return typeof HOME_DAYS !== "undefined" && HOME_DAYS.i
 /* rest seconds → "2.5 min" / "1.5 min" / "1 min" */
 function fmtMin(sec){ return (Math.round((sec || 0) / 6) / 10) + " min"; }
 /* warm-up length shown in its head, per day ("~10 min" gym, shorter at home) */
-function warmTime(prog){ return (typeof WARMUP_TIME !== "undefined" && WARMUP_TIME[prog]) || "~10 min"; }
+function warmTime(prog){ if(db && db.startedFresh) return "~5 min"; return (typeof WARMUP_TIME !== "undefined" && WARMUP_TIME[prog]) || "~10 min"; }   /* Part 7: a phone that began with the first start: the general warm-up */
 /* the lifts heading word: "Main lifts" in the gym, "Exercises" at home */
 function liftsWord(prog){ var P = db.programs[prog]; return (P && P.home) ? "Exercises" : "Main lifts"; }
 /* the day-track for today in his week schedule: a gym or home day, or the home session riding on a cardio day */
@@ -33,7 +33,9 @@ function shownAnchor(exId){ return (previewing() && ui.preview.anchor) ? ui.prev
 function shownWeeksDone(prog){ return previewing() ? [] : progWeeksDone(prog); }
 function shownCurrentWeek(prog){ return previewing() ? 1 : currentWeek(prog); }
 /* read-only weeksDone for a day-track WITHIN the active program (per-program progress) */
-function progWeeksDone(prog){ var ps = db.programState && db.programState[db.activeProgram]; var d = ps && ps.progress && ps.progress[prog]; return (d && d.weeksDone) || []; }
+function progWeeksDone(prog){ return weeksDoneOf(db.activeProgram, prog); }
+/* the same for any program (Part 5: Today's cards of the programs on) */
+function weeksDoneOf(pid, prog){ var ps = db.programState && db.programState[pid]; var d = ps && ps.progress && ps.progress[prog]; return (d && d.weeksDone) || []; }
 /* the week a day-track is on: after the last finished one; a 12-week program stops at its last week, a smart program runs
    on (2026-11-11: week 13 after week 12, suggestions keep coming) */
 function currentWeek(prog){
@@ -122,12 +124,18 @@ function thumbHtml(exId){
 
 /* ---------- the Workout ---------- */
 /* the warm-up of a day: its own list; a day of his own program gets the shared gym warm-up (Part 2) */
-function warmupFor(prog){ return (typeof WARMUP_BY_PROG !== "undefined" && WARMUP_BY_PROG[prog]) || ((typeof isOwnDay === "function" && isOwnDay(prog)) ? WARMUP_SHARED : []); }
+function warmupFor(prog){
+  if(db && db.startedFresh && typeof WARMUP_GENERAL !== "undefined") return WARMUP_GENERAL;   /* Part 7: the general warm-up (tracker-welcome.js) */
+  return (typeof WARMUP_BY_PROG !== "undefined" && WARMUP_BY_PROG[prog]) || ((typeof isOwnDay === "function" && isOwnDay(prog)) ? WARMUP_SHARED : []);
+}
 /* the gym days the Workout shows: the shown program's days (Part 2: his programs have their own) */
-function shownDays(){ var P = shownProg(); return (P && Array.isArray(P.days) && P.days.length) ? P.days : STRENGTH_DAYS; }
+function shownDays(){
+  if(!previewing() && typeof multiOn === "function" && multiOn()) return onGymDays();   /* Part 5: the days of every program on */
+  var P = shownProg(); return (P && Array.isArray(P.days) && P.days.length) ? P.days : STRENGTH_DAYS; }
 function renderPlan(){
   var sd = shownDays(), td = todayProgram();
   if(!ui.planProg || !db.programs[ui.planProg] || (sd.indexOf(ui.planProg) < 0 && !isHomeDay(ui.planProg))){ ui.planProg = (td && db.programs[td] && (sd.indexOf(td) >= 0 || isHomeDay(td))) ? td : sd[0]; ui.planWeek = null; }
+  if(typeof followDay === "function" && followDay(ui.planProg)) ui.planWeek = null;   /* Part 5: the day's own program is the one on screen */
   var existingWarm = document.querySelector(".warmSec"); if(existingWarm) ui.warmOpen = existingWarm.open;   /* keep warm-up open across re-renders */
   var prog = ui.planProg, P = db.programs[prog], cur = shownCurrentWeek(prog), done = shownWeeksDone(prog);
   if(!ui.planWeek || ui.planLastProg !== prog){ ui.planWeek = cur; ui.planLastProg = prog; }
@@ -152,8 +160,9 @@ function renderPlan(){
      weekday it sits on in his week) */
   var dayTab = function(id){ var home = isHomeDay(id);
     return '<button class="progTab' + (id === prog ? " sel" : "") + '" data-act="prog" data-prog="' + id + '">' + (home ? icon("house", "sm") + '<span class="sr">Home </span>' : '') + '<span class="ptName">' + esc(home ? homeTabLabel(id) : shortName(id)) + '</span></button>'; };
+  var homeTabs = typeof HOME_DAYS !== "undefined" ? HOME_DAYS.filter(function(id){ return !!db.programs[id]; }) : [];   /* Part 7: none on a phone that began with the first start, so no empty group */
   h += '<div class="daySwitch"><div class="progTabs">' + shownDays().map(dayTab).join("") + '</div>' +
-    (typeof HOME_DAYS !== "undefined" ? '<div class="progTabs home">' + HOME_DAYS.filter(function(id){ return !!db.programs[id]; }).map(dayTab).join("") + '</div>' : '') + '</div>';
+    (homeTabs.length ? '<div class="progTabs home">' + homeTabs.map(dayTab).join("") + '</div>' : '') + '</div>';
   /* one quiet phase line; the speed rule in full and the soreness rule sit behind the i chip */
   var rmA = shownRateMode(), rmM = PROGRESSION_MODES[rmA], smart = SP.smart === true;
   var paceNote = (!smart && rmA !== "plateau" && rmM) ? ' · <span class="accT">' + esc(rmM.label) + ' pace</span>' : '';

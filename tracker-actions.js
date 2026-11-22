@@ -147,6 +147,7 @@ function startTraining(pid){
     if(programTrained(pid)) ps.cycle=cycleOf(pid)+1;   /* a new run: its own diary cycle … */
     clearTicks(pid);                                    /* … and no ticks left over from the last run */
     db.activeProgram=pid;
+    delete db.programsOn; delete db.weekMix;            /* Part 5: Switch to = this program only */
     if(!ps.startedAt) ps.startedAt=nowISO(); ps.completedAt=null;
     (getProgram(pid).days||STRENGTH_DAYS).concat(typeof HOME_DAYS!=="undefined"?HOME_DAYS:[]).forEach(function(d){ if(!ps.progress[d]) ps.progress[d]={weeksDone:[]}; else ps.progress[d].weeksDone=[]; });   /* home weeks restart with the cycle too */
     if(typeof applyDays==="function") applyDays();   /* Part 2: an edited built-in's own days come with it */
