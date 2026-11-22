@@ -3,7 +3,7 @@
    immediately when online (cache is only the offline fallback); CACHE-FIRST for images
    /manifest (rarely change → fast, saves data). Bump CACHE on each release. */
 "use strict";
-var CACHE = "training-2026-11-19-v1";   /* bump on every release so returning phones evict the old shell (2026-11-19: updates from the public app-only repository BitRazor/training-app; -v4 of 2026-11-17 went live as 2026.11.17.6) */
+var CACHE = "training-2026-11-22-v1";   /* bump on every release so returning phones evict the old shell (2026-11-22: the program editor's weekday chips, superset links and the numbers on each row; -11-19-v1 went live as 2026.11.19.1, updates from the public app-only repository BitRazor/training-app) */
 var CORE = [
   "./", "./index.html", "./tracker.css", "./boot.js", "./native.js",
   "./tracker-seed.js", "./tracker-engine.js", "./tracker-desc.js", "./exercise-catalog.js", "./ui-icons.js", "./tracker-views.js", "./tracker-plan.js",

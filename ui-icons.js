@@ -58,7 +58,9 @@ var ICONS = {
   /* 2026-11-04 (Part 1): the stopped workout clock; an update check that could not reach GitHub */
   stop:     '<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>',
   wifiOff:  '<path d="M8.8 16a4.6 4.6 0 0 1 6.4 0M5.6 12.6a9.2 9.2 0 0 1 12.8 0M2.5 9.2a13.8 13.8 0 0 1 19 0M12 19.5v.1M4 4l16 16"/>',
-  pulse:    '<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>'
+  pulse:    '<path d="M3 12h4l2.5-6 5 12 2.5-6h4"/>',
+  /* 2026-11-22 (Part 4 of the friends' version): the program editor's link between two exercises (a superset) */
+  chain:    '<path d="M10.5 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.1 1.1"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.1-1.1"/>'
 };
 function icon(name, cls){
   return '<svg class="ic' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + (ICONS[name] || "") + '</svg>';

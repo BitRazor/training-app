@@ -769,7 +769,11 @@ button.wrow:active{background:var(--raised)}
 .edDayTitle{flex:1; min-width:0; font-size:22px; font-weight:800; letter-spacing:-.01em}
 .edDayBtns{display:flex; gap:8px}
 .edDayBtns .btn{min-height:40px; background:var(--raised)}
-.edEx.paired{box-shadow:inset 3px 0 0 var(--ss)}
+/* Part 4 (2026-11-22): a superset's bracket on the left of its rows and the links between them (the rows keep room for it) */
+.edEx{position:relative; flex-wrap:wrap; padding-left:16px}
+.edEx.paired::before,.edLinkRow.on::before{content:""; position:absolute; left:5px; top:0; bottom:0; border-left:3px solid var(--ss)}
+.edEx.ssTop::before{top:18px; width:7px; border-top:3px solid var(--ss); border-top-left-radius:7px}
+.edEx.ssBot::before{bottom:18px; width:7px; border-bottom:3px solid var(--ss); border-bottom-left-radius:7px}
 .edExName{font-weight:600}
 .edPair{margin-left:6px; padding:1px 7px; font-size:11px; vertical-align:2px}
 .edEmpty{margin:8px 4px 12px}
@@ -790,6 +794,39 @@ button.wrow:active{background:var(--raised)}
 .sw.on{background:var(--acc)}
 .sw.on i{transform:translateX(20px); background:var(--onAcc)}
 .edRm{margin-top:12px}
+
+/* ===================== Part 4 of the friends' version (2026-11-22): weekday chips, links, the numbers on a row ===================== */
+/* Mon–Sun under each workout day: lime where it sits, a dot in the colour of what holds a taken weekday */
+.edDay{flex-wrap:wrap}
+.edWk{flex-basis:100%; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; margin:2px 0 8px 44px}
+.wdChip{position:relative; min-width:0; height:36px; padding:0; border:0; border-radius:10px; background:var(--high); color:var(--tx); font:600 12.5px var(--font)}
+.wdChip.busy{background:var(--raised); color:var(--tx2)}
+.wdChip.sel{background:var(--acc); color:var(--onAcc); font-weight:800}
+.wdChip:active{filter:brightness(1.2)}
+.wdDot{position:absolute; left:50%; bottom:4px; width:5px; height:5px; margin-left:-2.5px; border-radius:999px; background:var(--tx3)}
+.wdChip.strength .wdDot{background:var(--tx2)}
+.wdChip.cardio .wdDot{background:var(--cardio)}
+.wdChip.hiit .wdDot{background:var(--warm)}
+.wdChip.home .wdDot{background:var(--homec)}
+.edWkNote{margin:2px 4px 10px}
+/* an exercise row: its name and line open the sheet; the numbers are their own button */
+.edBody{flex:1; min-width:0; display:flex; align-items:center; gap:10px; min-height:56px; padding:6px 8px; border-radius:12px; cursor:pointer}
+.edBody:active{background:var(--raised)}
+.edEx .edPick{display:block; width:100%; min-height:0; padding:2px 0; border-radius:8px}
+.edEx .edPick:active{background:none}
+.edNums{display:inline-flex; align-items:center; min-height:32px; margin:2px 0; padding:0 10px; border:0; border-radius:9px; background:var(--high); color:var(--tx); font:700 13.5px var(--font)}
+.edNums:active{background:var(--line)}
+.edNums.open{background:var(--accTint); color:var(--acc)}
+.edInline{flex-basis:100%; margin:0 6px 8px 52px; padding:2px 0 4px}
+.edIRow{display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:54px}
+.edILab{font-size:14.5px; font-weight:600}
+/* the link between two rows */
+.edLinkRow{position:relative; display:flex; align-items:center; height:34px; padding-left:60px}
+.edLink{position:relative; display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 12px 0 10px; border:1px dashed var(--line); border-radius:999px; background:none; color:var(--tx3); font:700 12.5px var(--font)}
+.edLink::after{content:""; position:absolute; left:-10px; right:-10px; top:-4px; bottom:-4px}   /* a thumb-sized target: the whole height of the link row */
+.edLink .ic{width:16px; height:16px}
+.edLink.on{border-style:solid; border-color:transparent; background:var(--ssTint); color:var(--ss)}
+.edLink:active{filter:brightness(1.25)}
 
 /* ===================== Part 2 (2026-11-04): the catalogue: filters, rows, details ===================== */
 .catFilters{margin:8px 0 2px}

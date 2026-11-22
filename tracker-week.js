@@ -31,7 +31,9 @@ var NAME_MAX = 30;
    days; the built-in programs share db.schedule, and each of his programs keeps its own week (db.userPrograms[id].week,
    null = his days on the built-in week's gym slots in order: its first day where Day A is, its second where Day B is) */
 function progDays(pid){ var P = (pid && typeof getProgram === "function") ? getProgram(pid) : null; return (P && Array.isArray(P.days) && P.days.length) ? P.days.slice() : STRENGTH_DAYS.slice(); }
-function workoutDays(){ return progDays(db && db.activeProgram).concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []); }
+/* Part 4 (2026-11-22): the editor's weekday chips place the days of any program, so the week functions take one */
+function progWorkoutDays(pid){ return progDays(pid).concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []); }
+function workoutDays(){ return progWorkoutDays(db && db.activeProgram); }
 /* every day a built-in program can put on the shared week (a day added to a built-in's edited copy too) */
 function builtinWeekDays(){ var o = []; (typeof BUILTIN_IDS !== "undefined" ? BUILTIN_IDS : PROGRAM_ORDER).forEach(function(id){ progDays(id).forEach(function(d){ if(o.indexOf(d) < 0) o.push(d); }); }); return o.concat(typeof HOME_DAYS !== "undefined" ? HOME_DAYS : []); }
 function dayChoices(days){ return (days || workoutDays()).concat(["z2", "norwegian-4x4", "rest"]); }
@@ -41,20 +43,28 @@ function hasWorkout(d){ return !!d && (d.type === "strength" || d.type === "home
 /* what a day is, as one of the day choices */
 function choiceOf(d){ return (!d || d.type === "rest") ? "rest" : d.ref; }
 function choiceType(c){ return CHOICE_TYPE[c] || ((typeof HOME_DAYS !== "undefined" && HOME_DAYS.indexOf(c) >= 0) ? "home" : "strength"); }
-function ownActive(){ return !!(db && typeof isOwnProg === "function" && isOwnProg(db.activeProgram)); }
+function isOwnPid(pid){ return !!(db && pid && typeof isOwnProg === "function" && isOwnProg(pid)); }
+function ownActive(){ return isOwnPid(db && db.activeProgram); }
 /* his program's week before he edits it: the built-in week with its gym days replaced in order */
-function defaultOwnWeek(){
-  var base = (db && Array.isArray(db.schedule) && db.schedule.length === 7) ? db.schedule : CURRENT_WEEK, days = progDays(db.activeProgram);
+function defaultOwnWeekFor(pid){
+  var base = (db && Array.isArray(db.schedule) && db.schedule.length === 7) ? db.schedule : CURRENT_WEEK, days = progDays(pid);
   return base.map(function(d, j){
     if(d.type !== "strength") return clone(d);
     var k = STRENGTH_DAYS.indexOf(d.ref), nd = k >= 0 ? days[k] : null;
     return nd ? { day: d.day, label: dayName(nd), type: "strength", ref: nd, note: "" } : makeDay(j, "rest");
   });
 }
+function defaultOwnWeek(){ return defaultOwnWeekFor(db.activeProgram); }
+/* a program's week as stored: his own program's own week; for a built-in the shared week, unfiltered (the editor's weekday
+   chips change only the days tapped, so a day only another built-in has is never dropped unasked) */
+function progWeek(pid){
+  if(isOwnPid(pid)){ var up = db.userPrograms[pid]; return (Array.isArray(up.week) && up.week.length === 7) ? up.week : defaultOwnWeekFor(pid); }
+  return (db && Array.isArray(db.schedule) && db.schedule.length === 7) ? db.schedule : CURRENT_WEEK;
+}
 /* the week every screen reads: his program's own week, else the shared week (a day another program added shows as rest) */
 function weekPlan(){
-  if(ownActive()){ var up = db.userPrograms[db.activeProgram]; return (Array.isArray(up.week) && up.week.length === 7) ? up.week : defaultOwnWeek(); }
-  var w = (db && Array.isArray(db.schedule) && db.schedule.length === 7) ? db.schedule : CURRENT_WEEK, mine = workoutDays();
+  if(ownActive()) return progWeek(db.activeProgram);
+  var w = progWeek(db && db.activeProgram), mine = workoutDays();
   if(w.every(function(d){ return !d || !hasWorkout(d) || mine.indexOf(d.ref) >= 0; })) return w;
   return w.map(function(d, j){ return (d && hasWorkout(d) && mine.indexOf(d.ref) < 0) ? makeDay(j, "rest") : d; });
 }
@@ -136,6 +146,8 @@ function stripWord(d){ return hasWorkout(d) ? (customName(d.ref) || (d.type === 
 function addonWord(hid){ return customName(hid) || (ADDON_TITLE[hid] || dayName(hid)).toLowerCase(); }
 /* what a day is, for the editor: the workout's name, or "Zone 2 cardio" / "Norwegian 4×4" / "Rest" */
 function dayWhat(d){ return hasWorkout(d) ? dayName(d.ref) : (CHOICE_TITLE[choiceOf(d)] || d.label || ""); }
+/* everything a day holds, a home workout on top included: "Zone 2 cardio + Home · Wed" (the program editor's chips) */
+function weekWhat(d){ return dayWhat(d) + (d && d.home ? " + " + dayName(d.home) : ""); }
 
 /* ---------- the editor page ---------- */
 function renderSchedule(){
@@ -176,23 +188,26 @@ function openDaySheet(j){
   }).join("") + '</div>';
   openSheet(WEEKDAY_LONG[j], h + '</div>', { cls: "dayCard", closeLabel: "Done" });
 }
-/* store an edited week (null when it is the original again) and redraw */
-function commitWeek(wk){
-  if(ownActive()) db.userPrograms[db.activeProgram].week = cleanSchedule(wk, workoutDays(), defaultOwnWeek());   /* his program's own week */
+/* store an edited week of program pid (null when it is the original again) and redraw */
+function commitWeekFor(pid, wk){
+  if(isOwnPid(pid)) db.userPrograms[pid].week = cleanSchedule(wk, progWorkoutDays(pid), defaultOwnWeekFor(pid));   /* his program's own week */
   else db.schedule = cleanSchedule(wk);
   save();
-  if(ui.view === "schedule") renderSchedule(); else if(ui.view === "today") renderToday();
+  if(ui.view === "schedule") renderSchedule(); else if(ui.view === "today") renderToday(); else if(ui.view === "progedit" && typeof renderProgEdit === "function") renderProgEdit();
 }
-/* day j becomes choice c. A workout moved here leaves its old day as rest (or just leaves the cardio day it rode on);
-   what this day held is off the week, except a home workout on top when the day stays cardio */
-function setDayChoice(j, c){
-  var plan = weekPlan(), d = plan[j]; if(!d || dayChoices().indexOf(c) < 0) return;
-  if(choiceOf(d) === c){ closeModal(); return; }
-  var nm = namesNow(), undo = undoPoint(), wk = clone(plan), parts = [], wd = WEEKDAY_LONG[j], gone = [];
+function commitWeek(wk){ commitWeekFor(db.activeProgram, wk); }
+/* the week `plan` with day j made choice c, and the toast's words (nothing is stored here). A workout moved here leaves its
+   old day as rest (or just leaves the cardio day it rode on); what this day held is off the week, except a home workout on
+   top when the day stays cardio. ids = the workouts that week can hold. Names are read before anything moves (a home
+   workout is named after the day it sits on) */
+function weekChange(plan, j, c, ids){
+  var d = plan[j], wk = clone(plan), parts = [], wd = WEEKDAY_LONG[j], gone = [], nm = {}, isW = ids.indexOf(c) >= 0;
+  plan.forEach(function(x){ if(x && hasWorkout(x)) nm[x.ref] = dayName(x.ref); if(x && x.home) nm[x.home] = dayName(x.home); });
+  if(isW && !(c in nm)) nm[c] = dayName(c);
   var type = choiceType(c), keep = (isCardioType(type) && d.home && d.home !== c) ? d.home : null;
   if(hasWorkout(d)) gone.push(d.ref);
   if(d.home && !keep && d.home !== c) gone.push(d.home);
-  if(isWorkoutDay(c)){
+  if(isW){
     var at = slotOf(c, wk);
     if(at && at.j !== j){
       parts.push(nm[c] + " moved to " + wd);
@@ -202,9 +217,16 @@ function setDayChoice(j, c){
   } else parts.push(wd + " is now " + (c === "rest" ? "rest" : CHOICE_TITLE[c]));
   wk[j] = makeDay(j, c, keep);
   gone.forEach(function(id){ parts.push(nm[id] + " is off the week"); });
-  commitWeek(wk);
-  if(isCardioType(type)) openDaySheet(j); else closeModal();   /* a cardio day stays open for a home workout on top */
-  toast(parts.join(" · "), { undo: undo });
+  return { wk: wk, text: parts.join(" · ") };
+}
+/* day j of the week schedule becomes choice c (weekChange), with an Undo */
+function setDayChoice(j, c){
+  var plan = weekPlan(), d = plan[j]; if(!d || dayChoices().indexOf(c) < 0) return;
+  if(choiceOf(d) === c){ closeModal(); return; }
+  var undo = undoPoint(), r = weekChange(plan, j, c, workoutDays());
+  commitWeek(r.wk);
+  if(isCardioType(choiceType(c))) openDaySheet(j); else closeModal();   /* a cardio day stays open for a home workout on top */
+  toast(r.text, { undo: undo });
 }
 /* the home workout on top of cardio day j (null = none) */
 function setDayHome(j, hid){
