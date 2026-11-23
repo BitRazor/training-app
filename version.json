@@ -1,7 +1,7 @@
 {
-  "version": "2026.11.22.8.1",
+  "version": "2026.11.22.9.1",
   "files": {
-    "index.html": "e767d173b7b55b6444da8eeeffcc723763b63703d2173aa4848e5fa796ce69e7",
+    "index.html": "08e660aca3cec3f44c9afddd7af8226c62ec2ec687f4e07cc7c3ce08b2f9a4f4",
     "tracker.css": "c10fe4e370ff86d67653fa92dc448a90e58f611a338d4051b360dd0686cc2b3c",
     "native.js": "daee7a1ed540c6f73211b7fc7aaf54cae084746dcdc0e25f52e5382eaeee832a",
     "tracker-seed.js": "54ee79e121c433ebe9a920d02b1e104d92a7288fc5ba83665af6930597bc57e4",
