@@ -177,8 +177,8 @@ function renderPlan(){
   var wu = warmupFor(prog), wuDone = doneCount(prog, w, wu.map(function(m){ return "wu:" + m.gif; }));
   h += '<details class="warmSec"' + (ui.warmOpen ? " open" : "") + '><summary><span class="wuIc">' + icon("flame") + '</span><span class="wuHead">Warm-up · ' + warmTime(prog) + ' · ' + wuDone + '/' + wu.length + '</span>' + icon("chevD", "wuChev") + '</summary><div class="secBody">' +
        wu.map(function(m){
-         var g = m.gif.indexOf(".") >= 0 ? m.gif : m.gif + ".gif", wd = isDone(prog, w, "wu:" + m.gif);
-         var fig = m.nopic ? '' : m.pending ? '<button class="wuThumb" data-act="pic" data-wu="' + esc(m.gif) + '"><div class="exFig pending">' + icon("camera") + '<span class="pendSoon" aria-hidden="true">soon</span><span class="pendTx">Picture to come</span><span class="pendFile">gifs/' + esc(g) + '</span></div></button>'
+         var g = wuPicFile(m), wd = isDone(prog, w, "wu:" + m.gif);   /* our picture first (tracker-desc.js); the tick id stays */
+         var fig = m.nopic ? '' : wuPending(m) ? '<button class="wuThumb" data-act="pic" data-wu="' + esc(m.gif) + '"><div class="exFig pending">' + icon("camera") + '<span class="pendSoon" aria-hidden="true">soon</span><span class="pendTx">Picture to come</span><span class="pendFile">gifs/' + esc(g) + '</span></div></button>'
                              : '<button class="wuThumb" data-act="pic" data-wu="' + esc(m.gif) + '"><div class="exFig"><img src="gifs/' + g + '" alt="" loading="lazy" onerror="this.closest(\'.exFig\').style.display=\'none\'"></div></button>';
          return '<div class="wuCard' + (wd ? " done" : "") + (m.nopic ? " nopic" : "") + '">' + fig + '<div class="wuTx"><div class="wuName">' + esc(m.name) + '</div><div class="wuDetail">' + esc(m.detail) + '</div></div>' +
            '<button class="exTick wuTick' + (wd ? " on" : "") + '" data-act="donetick" data-prog="' + prog + '" data-week="' + w + '" data-item="wu:' + m.gif + '" aria-label="mark done">' + icon("check") + '</button></div>';

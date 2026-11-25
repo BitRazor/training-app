@@ -66,8 +66,8 @@ function openExSheet(exId, sec, inDay){
 function warmMove(gif){ for(var d in WARMUP_BY_PROG){ var L = WARMUP_BY_PROG[d] || []; for(var i = 0; i < L.length; i++) if(L[i].gif === gif) return L[i]; } return null; }
 function openPicSheet(gif){
   var m = warmMove(gif); if(!m) return;
-  var g = m.gif.indexOf(".") >= 0 ? m.gif : m.gif + ".gif";
-  var pic = m.nopic ? '' : m.pending ? '<div class="exFig pending big">' + icon("camera", "xl") + '<span class="pendTx">Picture to come</span><span class="pendFile">gifs/' + esc(g) + '</span></div>'
+  var g = wuPicFile(m);
+  var pic = m.nopic ? '' : wuPending(m) ? '<div class="exFig pending big">' + icon("camera", "xl") + '<span class="pendTx">Picture to come</span><span class="pendFile">gifs/' + esc(g) + '</span></div>'
     : '<div class="exFig big"><img src="gifs/' + g + '" alt="' + esc(m.name) + '" onerror="this.closest(\'.exFig\').style.display=\'none\'"></div>';
   openSheet(m.name, '<div class="exSheet"><div class="exBig">' + pic + '</div><div class="exNow"><div class="exNowTop"><span class="pill warn">warm-up</span></div><div class="exNowT small">' + esc(m.detail) + '</div></div></div>');
 }
@@ -91,8 +91,8 @@ function renderExercises(){
 }
 function libRowHtml(it){
   if(it.kind === "warm"){
-    var m = it.move, g = m.gif.indexOf(".") >= 0 ? m.gif : m.gif + ".gif";
-    var th = m.nopic ? '<div class="thumbNone">' + icon("flame") + '</div>' : m.pending ? '<div class="exFig pending">' + icon("camera") + '<span class="pendSoon" aria-hidden="true">soon</span><span class="pendTx">Picture to come</span><span class="pendFile">gifs/' + esc(g) + '</span></div>'
+    var m = it.move, g = wuPicFile(m);
+    var th = m.nopic ? '<div class="thumbNone">' + icon("flame") + '</div>' : wuPending(m) ? '<div class="exFig pending">' + icon("camera") + '<span class="pendSoon" aria-hidden="true">soon</span><span class="pendTx">Picture to come</span><span class="pendFile">gifs/' + esc(g) + '</span></div>'
       : '<div class="exFig"><img src="gifs/' + g + '" alt="" loading="lazy" onerror="this.closest(\'.exFig\').style.display=\'none\'"></div>';
     return '<button class="li libRow" data-act="pic" data-wu="' + esc(m.gif) + '"><span class="libThumb">' + th + '</span><span class="liB"><span class="liT libName">' + esc(m.name) + '</span><span class="liS">' + esc(m.detail) + '</span></span>' + icon("chevR", "chev") + '</button>';
   }

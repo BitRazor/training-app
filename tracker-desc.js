@@ -5,7 +5,7 @@
    (both were missing a full description). Keyed by exercise id. Loaded before tracker.js. */
 
 /* exercise id -> gif filename in gifs/ (the calibration app's verified animations).
-   internal-rotation has no gif (the cuff primer never had one). */
+   internal-rotation had no gif (the cuff primer never had one); since 2026-11-25 it has our own (EX_GIF_MH). */
 var EX_GIF = {
   "atg-split-squat":"atg", "rdl":"rdl", "leg-curl":"legcurl", "calf-raise":"calf",
   "tibialis-raise":"tib", "hip-flexion":"psoas", "copenhagen-plank":"copen",
@@ -48,7 +48,52 @@ var EX_GIF_MH = {
   /* 2026-11-17 later (his order of 2026-11-16: "First focus on exercises in my programs (gifs)"): the last lifts of his
      days get theirs; the older facep, vpush, vpull and legcurl GIFs stay in gifs/ but are no longer shown */
   "face-pulls":"facepull.webp", "triceps-overhead":"tricepsoh.webp", "cable-pulldown":"pulldown.webp",
-  "leg-curl":"legcurl.webp"
+  "leg-curl":"legcurl.webp",
+  /* 2026-11-25: his two exercises outside his days: the machine chest press shares the lever chest press's picture
+     (the same movement: handles at mid-chest, pressed forward to just short of lockout), the seated calf raise is our
+     seated calf machine (knees bent about 90 degrees, the balls of the feet on a block, the pad over the knees) */
+  "chest-press":"lvchest.webp", "calf-raise":"seatcalfm.webp",
+  /* 2026-11-25: the towel-roll internal rotation, the last of his exercises without a picture (on his back, the arm on
+     a rolled towel, the forearm turned toward his belly) */
+  "internal-rotation":"introt.webp",
+  /* 2026-11-24: the starter programs' library exercises get our own pictures too (the library's own id, "fedb:..."):
+     the back squat, the conventional deadlift, the bent-over barbell row, the dumbbell split squat, the dumbbell curl */
+  "fedb:Barbell_Squat":"bbsquat.webp", "fedb:Barbell_Deadlift":"bbdeadlift.webp", "fedb:Bent_Over_Barbell_Row":"bbrow.webp",
+  "fedb:Split_Squat_with_Dumbbells":"dbsplitsquat.webp", "fedb:Dumbbell_Bicep_Curl":"dbcurl.webp",
+  "fedb:Hammer_Curls":"hammer.webp", "fedb:Seated_Dumbbell_Press":"seatpress.webp",
+  "fedb:Seated_Side_Lateral_Raise":"seatlat.webp", "fedb:One-Arm_Dumbbell_Row":"dbrow1.webp",
+  "fedb:Incline_Dumbbell_Press":"inclinepress.webp", "fedb:Dumbbell_Lunges":"dblunge.webp",
+  "fedb:Standing_Military_Press":"milpress.webp", "fedb:Barbell_Hip_Thrust":"hipthrust.webp",
+  "fedb:Seated_Barbell_Military_Press":"seatmilpress.webp", "fedb:Barbell_Bench_Press_-_Medium_Grip":"bbbench.webp",
+  "fedb:Triceps_Pushdown_-_Rope_Attachment":"pushdown.webp", "fedb:Cable_Hammer_Curls_-_Rope_Attachment":"cablehammer.webp",
+  "fedb:Cable_Crunch":"cablecrunch.webp", "fedb:Close-Grip_Front_Lat_Pulldown":"cgpulldown.webp",
+  "fedb:Dumbbell_Shoulder_Press":"seatpress.webp", "fedb:Cable_Crossover":"cablecross.webp",
+  "fedb:Cable_Rear_Delt_Fly":"reardelt.webp", "fedb:Pullups":"pullup.webp", "fedb:Chin-Up":"chinup.webp",
+  "fedb:Seated_Cable_Rows":"seatedrow.webp", "fedb:Dumbbell_Shrug":"dbshrug.webp",
+  "fedb:Bent_Over_Two-Dumbbell_Row":"dbrow2.webp", "fedb:Leg_Extensions":"legext.webp",
+  "fedb:Lying_Leg_Curls":"legcurl.webp", "fedb:Wide-Grip_Lat_Pulldown":"pulldown.webp",
+  "fedb:Dumbbell_Squat":"dbsquat.webp", "fedb:Dumbbell_Rear_Lunge":"dbrearlunge.webp",
+  "fedb:Incline_Dumbbell_Curl":"inclinecurl.webp", "fedb:Front_Dumbbell_Raise":"frontraise.webp",
+  "fedb:Farmers_Walk":"farmer.webp", "fedb:Incline_Dumbbell_Flyes":"inclinefly.webp",
+  "fedb:Arnold_Dumbbell_Press":"arnold.webp", "fedb:Standing_Dumbbell_Calf_Raise":"calfstand.webp",
+  "fedb:Stiff-Legged_Barbell_Deadlift":"rdl.webp", "fedb:Stiff-Legged_Dumbbell_Deadlift":"sldl.webp",
+  "fedb:Tricep_Dumbbell_Kickback":"kickback.webp", "fedb:Bodyweight_Squat":"bwsquat.webp", "fedb:Plank":"rkcplank.webp", "fedb:Barbell_Shrug":"bbshrug.webp", "fedb:Hanging_Leg_Raise":"hangraise.webp", "fedb:Barbell_Curl":"bbcurl.webp", "fedb:Reverse_Barbell_Curl":"revcurl.webp", "fedb:Barbell_Lunge":"bblunge.webp", "fedb:Underhand_Cable_Pulldowns":"ucpulldown.webp", "fedb:V-Bar_Pulldown":"vbarpd.webp", "fedb:Upright_Barbell_Row":"uprow.webp", "fedb:Seated_Leg_Curl":"seatcurl.webp", "fedb:Good_Morning":"goodmorning.webp", "fedb:Push_Press":"pushpress.webp", "fedb:Overhead_Cable_Curl":"ohcablecurl.webp", "fedb:Single_Leg_Glute_Bridge":"slbridge.webp", "fedb:Pushups":"pushup.webp", "fedb:Side_Bridge":"sidebridge.webp", "fedb:Crunches":"crunch.webp", "fedb:Dead_Bug":"deadbug.webp", "fedb:Glute_Kickback":"gkick.webp", "fedb:Straight-Arm_Pulldown":"sapull.webp", "fedb:Bench_Dips":"benchdip.webp", "fedb:Flat_Bench_Lying_Leg_Raise":"benchlegraise.webp",
+  "fedb:Rack_Pulls":"rackpull.webp", "fedb:Barbell_Glute_Bridge":"bbbridge.webp",
+  "fedb:Barbell_Incline_Bench_Press_-_Medium_Grip":"inclinebb.webp",
+  "fedb:Palms-Down_Wrist_Curl_Over_A_Bench":"bbwristdown.webp", "fedb:Palms-Up_Barbell_Wrist_Curl_Over_A_Bench":"bbwristup.webp",
+  "fedb:Reverse_Flyes":"revfly.webp", "fedb:Dumbbell_Lying_Rear_Lateral_Raise":"revfly.webp",
+  "fedb:Barbell_Seated_Calf_Raise":"bbseatcalf.webp", "fedb:Triceps_Pushdown":"barpushdown.webp",
+  "fedb:Inverted_Row":"invrow.webp", "fedb:Concentration_Curls":"conccurl.webp",
+  "fedb:Sumo_Deadlift":"sumodl.webp", "fedb:Decline_Barbell_Bench_Press":"dcbench.webp",
+  "fedb:Decline_Dumbbell_Bench_Press":"dcdbpress.webp", "fedb:Decline_Crunch":"dccrunch.webp",
+  "fedb:Smith_Machine_Squat":"smsquat.webp", "fedb:Smith_Machine_Calf_Raise":"smcalf.webp",
+  "fedb:Cable_Seated_Lateral_Raise":"cslatraise.webp", "fedb:Lateral_Raise_-_With_Bands":"bandlat.webp",
+  "fedb:Kettlebell_One-Legged_Deadlift":"kbsldl.webp", "fedb:One-Arm_Kettlebell_Swings":"kbswing.webp",
+  "fedb:Goblet_Squat":"goblet.webp", "fedb:EZ-Bar_Curl":"ezcurl.webp", "fedb:EZ-Bar_Skullcrusher":"skull.webp",
+  "fedb:Lying_Triceps_Press":"lyingtri.webp", "fedb:Preacher_Curl":"preacher.webp", "fedb:Spider_Curl":"spider.webp",
+  "fedb:Cable_Preacher_Curl":"cpreacher.webp", "fedb:Standing_Dumbbell_Triceps_Extension":"triext.webp",
+  "fedb:Straight-Arm_Dumbbell_Pullover":"pullover.webp", "fedb:Barbell_Step_Ups":"bbstepup.webp", "fedb:Dumbbell_Step_Ups":"dbstepup.webp", "fedb:Front_Barbell_Squat":"frontsquat.webp", "fedb:Barbell_Walking_Lunge":"bbwalklunge.webp", "fedb:Bodyweight_Walking_Lunge":"bwwalklunge.webp", "fedb:Standing_Cable_Wood_Chop":"woodchop.webp", "fedb:Air_Bike":"airbike.webp", "fedb:Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists":"obcrunch.webp", "fedb:Pallof_Press":"pallof.webp", "fedb:Dips_-_Chest_Version":"dipschest.webp", "fedb:Dips_-_Triceps_Version":"dipstri.webp", "fedb:Russian_Twist":"rtwist.webp", "fedb:Cable_Reverse_Crunch":"revcrunch.webp", "fedb:Trap_Bar_Deadlift":"trapdl.webp", "fedb:Knee_Hip_Raise_On_Parallel_Bars":"vlegraise.webp", "fedb:Ab_Roller":"abroller.webp", "fedb:Weighted_Pull_Ups":"wpullup.webp", "fedb:T-Bar_Row_with_Handle":"tbarrow.webp", "fedb:Leg_Press":"legpress.webp", "fedb:Calf_Press_On_The_Leg_Press_Machine":"cpress.webp", "fedb:Leverage_Shoulder_Press":"lvshoulder.webp", "fedb:Machine_Shoulder_Military_Press":"mshoulder.webp", "fedb:Leverage_High_Row":"lvhighrow.webp", "fedb:Leverage_Iso_Row":"lviso.webp", "fedb:Reverse_Machine_Flyes":"revmfly.webp", "fedb:Thigh_Abductor":"abductor.webp", "fedb:Thigh_Adductor":"adductor.webp", "fedb:Leverage_Shrug":"lvshrug.webp",
+  "fedb:Leverage_Chest_Press":"lvchest.webp", "fedb:Leverage_Incline_Chest_Press":"lvincline.webp", "fedb:Butterfly":"butterfly.webp", "fedb:Hack_Squat":"hacksq.webp", "fedb:Machine_Preacher_Curls":"mpreacher.webp", "fedb:Smith_Machine_Bench_Press":"smbench.webp", "fedb:Smith_Machine_Incline_Bench_Press":"smincline.webp", "fedb:Close-Grip_Barbell_Bench_Press":"cgbench.webp"
 };
 function exPicFile(g){ return String(g).indexOf(".") >= 0 ? String(g) : g + ".gif"; }
 /* lifts whose picture is not added yet (2026-10-13): the card shows a labelled placeholder naming the
@@ -59,6 +104,19 @@ var EX_GIF_PENDING = {
 };
 /* the MetaHuman pictures (EX_GIF_MH above) take over; an exercise that now has one leaves the waiting list */
 for (var _mhk in EX_GIF_MH) { EX_GIF[_mhk] = EX_GIF_MH[_mhk]; delete EX_GIF_PENDING[_mhk]; }
+/* 2026-11-25 (his order of 2026-11-24, "Continue until all exercises gifs is done"): the shared warm-up's moves get our
+   own MetaHuman pictures too. A warm-up move's `gif` stays as it is, because it is also the move's done-tick id
+   ("wu:" + gif), so this table picks the picture and the stored ticks keep their ids. The quadruped step-throughs
+   share the bear step-through's picture: the same movement (from all fours, one hand lifted, the opposite leg swept
+   through under the body) */
+var WU_GIF_MH = {
+  "wu_sled":"treadmill.webp", "wu_wgs":"wgs.webp", "wu_quad":"bearstep.webp", "wu_inchworm":"inchworm.webp",
+  "wu_asian":"asiansq.webp", "wu_cossack":"cossack.webp", "wu_stickpass.jpg":"stickpass.webp", "wu_band":"bandpull.webp"
+};
+/* a warm-up move's picture in gifs/: ours first, else its own older file; it waits for one ("Picture to come") only
+   while it is marked pending and has none of ours */
+function wuPicFile(m){ return WU_GIF_MH[m.gif] || exPicFile(m.gif); }
+function wuPending(m){ return !!m.pending && !WU_GIF_MH[m.gif]; }
 /* 2026-10-17 (owner, exercise-review/review.md): the gym lifts' speed is "lower in about 3 s, then lift firmly in
    about 1–2 s, no jerk or bounce" (the old 3 s down / 3 s up is gone); the face-pull squeeze, the hip-flexion top
    hold and the back-extension squeeze stay. The right-knee and left-shoulder lifts carry ONE note — "scale the
