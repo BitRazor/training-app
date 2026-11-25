@@ -1,5 +1,5 @@
 {
-  "version": "2026.11.24.1.1",
+  "version": "2026.11.25.1.1",
   "files": {
     "index.html": "08e660aca3cec3f44c9afddd7af8226c62ec2ec687f4e07cc7c3ce08b2f9a4f4",
     "tracker.css": "c10fe4e370ff86d67653fa92dc448a90e58f611a338d4051b360dd0686cc2b3c",
@@ -61,7 +61,6 @@
     "gifs/cablecrunch.webp": "5a15a06782d3b00a1bf7c9fef0e857cff1dc140540ce7db8e0dda99ee2ffa728",
     "gifs/cablehammer.webp": "63dd27148b1592a451e2c7ab206c9365f260c9ec98498d934d3b8ab3489cda15",
     "gifs/cablerow.webp": "be3a8be0e8107e93734f08b241473d3c79a4f59988e110426495403f2ba50b5a",
-    "gifs/calf.gif": "06677479afca626e0e13fd06cc77c654b3fdf01cc4ac3d6892272c99e179b22c",
     "gifs/calfmach.webp": "6e3838b47018c2a20099cdb6b9753b5ff6f8c1ddeb03c5b6c53eed3ff13af063",
     "gifs/calfstand.webp": "3af39ed5aeabd31b1fd9ac6ef8df11a695eb47cc3b6783ef392a2f494960f629",
     "gifs/carry.webp": "9bbae5ce0628f5ee0810b998e420d30e74cacc054ec79445c7b221bd108a6e06",
@@ -139,7 +138,6 @@
     "gifs/ohcablecurl.webp": "e7b133f037d0d345b8d2f6dd29bd6f9739cc963261b2d5018bfbad03753bdff4",
     "gifs/pallof.webp": "ed156188b1384adff8a0e10f874f75dbb46b34dd993c77b47a2749fbd3628cd4",
     "gifs/preacher.webp": "244f6db8f017b92071e1e851cc0498e720c4308cd075073e00d45745e3d68c2d",
-    "gifs/press.gif": "ff95a3690c89d164656067991fc7188d756a45e017130a031e478c81d203918f",
     "gifs/pulldown.webp": "e5abe50af11dad69331d0b9026552e6e684c8b6ca07ed060cb5f03f34f0dc875",
     "gifs/pullover.webp": "d48690e6e08edffcb195a4ff855daa7ce9c12c55ee7221d2ae0620f3e75b7447",
     "gifs/pullup.webp": "bb804e5c4cb8a0e40ffc862a68b9f825e164437ac936ba61c9c303f073157506",
@@ -192,12 +190,6 @@
     "gifs/woodchop.webp": "2799dcaf87f42ff9ba435afe6125b90c4bb05e09816d0e7693f3dfa36e705362",
     "gifs/wpullup.webp": "7ace8a9019ccdfcb77373ced95eb119708cf6d09230491a090a47a9141e6869b",
     "gifs/wristc.webp": "7475cc522e7ad70434cdfb086cc68ff398b5ee70fd21a54d9f279d6d5e39c590",
-    "gifs/wu_band.gif": "889eae129df9065d2c9958b9d065453483e07bd411ddf8a7d6718f5e19423ecd",
-    "gifs/wu_inchworm.gif": "b747e21441d2a59a3b0af7e737b5d395be82778fca62fcd87a9a0f53093f8a9b",
-    "gifs/wu_quad.gif": "b7769656d6b6f04ae386813ddb495f4caa5027e86d240a175d1dee62d82264e8",
-    "gifs/wu_sled.gif": "83c3b8b481f9fb6d69c3606f2ea5435b4a26248b25ea9b76f7b7d8816692d421",
-    "gifs/wu_stickpass.jpg": "6b74640a98bef0e194a7c8fea73e0ebe528bad6acf38ec3fcb67468b2afdf881",
-    "gifs/wu_wgs.gif": "99b3709b90ca37967645a4dd76fcf3d1413f74f4cdaa5fcc210a6c6f6580680f",
     "icon-192.png": "e93cabf32ea984d64a6a5f28b4f26aa577808745a74f473a285d3cdf99352449",
     "icon-512.png": "c7fabe3d61b88a3078d31d8961f41379bd7f464e2df82d57f14316d3a6044d2f",
     "apple-touch-icon.png": "f73d841a140b5bc9459d478a9444ae5510faee6d4f401adf9c9ec37e74e9531b"
